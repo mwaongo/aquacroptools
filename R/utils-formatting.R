@@ -46,24 +46,26 @@
 }
 
 
-# Backward-compatible aliases (kept for existing code)
-# These can be removed once all usages are updated to .format_string_fmt()
+# Justification-specific shorthands, used throughout the write_*() functions
+# (write_cro, write_man, write_irr, write_prm, utils-headers, ...).
+# .format_string_fmt() is the underlying implementation; these are the
+# primary call sites, not aliases pending removal.
 
-#' @describeIn .format_string_fmt Center-justified formatting (legacy alias)
+#' @describeIn .format_string_fmt Center-justified formatting
 #' @keywords internal
 #' @noRd
 .format_string2 <- function(string, fmt, width) {
   .format_string_fmt(string, fmt, width, "centre")
 }
 
-#' @describeIn .format_string_fmt Left-justified formatting (legacy alias)
+#' @describeIn .format_string_fmt Left-justified formatting
 #' @keywords internal
 #' @noRd
 .format_string3 <- function(string, fmt, width) {
   .format_string_fmt(string, fmt, width, "left")
 }
 
-#' @describeIn .format_string_fmt Right-justified formatting (legacy alias)
+#' @describeIn .format_string_fmt Right-justified formatting
 #' @keywords internal
 #' @noRd
 .format_string4 <- function(string, fmt, width) {

@@ -2,37 +2,37 @@
 % Please edit documentation in R/run_aquacrop.R
 \name{run_aquacrop}
 \alias{run_aquacrop}
-\title{Run AquaCrop simulation}
+\title{Run an AquaCrop simulation}
 \usage{
 run_aquacrop(verbose = TRUE)
 }
 \arguments{
-\item{verbose}{Logical. Print messages (default: TRUE).}
+\item{verbose}{Logical. Should progress messages be printed?
+Defaults to \code{TRUE}.}
 }
 \value{
-Invisibly returns the exit status (0 = success, non-zero = error).
+Invisibly returns the AquaCrop exit status (\code{0} indicates success).
 }
 \description{
-Execute AquaCrop in the current directory. The directory must contain
-the AquaCrop executable (aquacrop.exe on Windows, aquacrop on Linux/macOS).
+Executes the AquaCrop executable in the current working directory. The
+directory must contain the AquaCrop executable (\code{aquacrop.exe} on Windows,
+\code{aquacrop} on Linux/macOS) together with a valid AquaCrop project structure.
 }
 \details{
-This function must be run from a directory containing the AquaCrop executable.
-The directory should also contain the standard AquaCrop folder structure
-(CLIMATE/, CROP/, SOIL/, MANAGEMENT/, LIST/, OUTP/, etc.).
-
-The OUTP/ directory is cleaned before running to avoid mixing results from
-different runs. Temporary files (AllDone.OUT, ListProjectsLoaded.OUT) are
+Before execution, all files in the \verb{OUTP/} directory are removed to prevent
+mixing outputs from previous simulations. Temporary files created by
+AquaCrop (\code{AllDone.OUT} and \code{ListProjectsLoaded.OUT}) are automatically
 removed after execution.
 }
 \examples{
 \dontrun{
-# Initialize project and run
 init_aquacrop("~/my-project")
 setwd("~/my-project")
-run_aquacrop()
 
-# Silent mode
+run_aquacrop()
 run_aquacrop(verbose = FALSE)
 }
+}
+\seealso{
+\code{\link[=init_aquacrop]{init_aquacrop()}}, \code{\link[=install_binaries]{install_binaries()}}
 }

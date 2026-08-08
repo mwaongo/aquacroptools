@@ -50,6 +50,18 @@ get_os <- function() {
 }
 
 
+#' AquaCrop Executable Filename for an OS
+#'
+#' @param os Character. One of "windows", "linux", "macos". Defaults to
+#'   the detected current OS via get_os().
+#' @return Character. "aquacrop.exe" on Windows, "aquacrop" otherwise.
+#'
+#' @noRd
+.aquacrop_exe_name <- function(os = get_os()) {
+  if (os == "windows") "aquacrop.exe" else "aquacrop"
+}
+
+
 #' Get End-of-Line Character
 #'
 #' @description

@@ -9,3 +9,6 @@
 paper.md
 ^doc$
 ^Meta$
+^\.claude$
+^CONTRIBUTING\.md$
+^CODE_OF_CONDUCT\.md$

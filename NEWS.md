@@ -1,3 +1,16 @@
+# aquacropr 0.2.1
+
+- `install_binaries()`: `compiler` defaults to `NULL` (was `"gfortran"`), matching `install_source()`.
+- `install_binaries()`: safer archive extraction, download validation, and post-install checks.
+- `install_binaries()`: stricter `path`/`force`/version argument validation.
+- `run_aquacrop()`: clearer error messages for a missing executable.
+- Fixed `|>` and `\(...)` lambda usage inconsistent with `Depends: R (>= 3.5)`; switched to `%>%`/`function()`.
+- Removed unused `gh` dependency and dead code in `utils-readers.R`.
+- Deduplicated OS/executable-name detection via `get_os()` and `.aquacrop_exe_name()`.
+- Fixed non-ASCII characters in `run_aquacrop()` and excluded `.claude/` from the build (`R CMD check` now passes clean).
+
+---
+
 # aquacropr 0.2.0
 
 ## Breaking changes

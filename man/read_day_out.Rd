@@ -34,7 +34,7 @@ df <- read_day_out("path/to/day.out", verbose = TRUE)
 
 # Filter one year after reading
 library(dplyr)
-df |> filter(Year == 1976)
+df \%>\% filter(Year == 1976)
 }
 
 }

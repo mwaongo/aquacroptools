@@ -548,9 +548,9 @@ find_onset <- function(
     if (is.null(years)) {
       plu_years <- read_plu(
         fs::path(base_path, climate_path, paste0(site_name, ".PLU"))
-      ) |>
-        dplyr::pull(year) |>
-        unique() |>
+      ) %>%
+        dplyr::pull(year) %>%
+        unique() %>%
         sort()
       years <- as.integer(plu_years)
     } else {
@@ -568,14 +568,14 @@ find_onset <- function(
   if (cal$onset == "rainfall") {
     clim_data <- read_plu(
       fs::path(base_path, climate_path, paste0(site_name, ".PLU"))
-    ) |>
+    ) %>%
       dplyr::mutate(
         doy = lubridate::yday(lubridate::make_date(year, month, day))
       )
   } else {
     clim_data <- read_tnx(
       fs::path(base_path, climate_path, paste0(site_name, ".Tnx"))
-    ) |>
+    ) %>%
       dplyr::mutate(
         doy = lubridate::yday(lubridate::make_date(year, month, day))
       )
@@ -601,7 +601,7 @@ find_onset <- function(
   if (cal$criterion_internal == 4L) {
     eto_data <- read_eto(
       fs::path(base_path, climate_path, paste0(site_name, ".ETo"))
-    ) |>
+    ) %>%
       dplyr::mutate(
         doy = lubridate::yday(lubridate::make_date(year, month, day))
       )

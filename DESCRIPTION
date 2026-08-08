@@ -2,7 +2,7 @@ Type: Package
 Package: aquacropr
 Language: en-GB
 Title: R interface to the FAO AquaCrop crop water productivity model (v7.0+)
-Version: 0.2.0
+Version: 0.2.1
 Author: 
     c(person(given = "Ousmane",
            family = "Ouedraogo",
@@ -31,7 +31,6 @@ Imports:
     tibble,
     purrr,
     cli,
-    gh,
     rappdirs,
     rstudioapi,
     withr,

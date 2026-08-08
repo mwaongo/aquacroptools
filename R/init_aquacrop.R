@@ -127,7 +127,7 @@ init_aquacrop <- function(path = ".",
       message("Use overwrite = TRUE to recreate directories")
 
       # Check if binary exists
-      exe_name <- if (.Platform$OS.type == "windows") "aquacrop.exe" else "aquacrop"
+      exe_name <- .aquacrop_exe_name()
       has_binary <- file.exists(file.path(path, exe_name))
 
       if (!has_binary) {
@@ -234,7 +234,7 @@ init_aquacrop <- function(path = ".",
   readme_path <- file.path(path, "README.txt")
 
   # Determine executable name
-  exe_name <- if (.Platform$OS.type == "windows") "aquacrop.exe" else "aquacrop"
+  exe_name <- .aquacrop_exe_name()
 
   # Version info
   if (is.null(version)) {

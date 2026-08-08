@@ -10,7 +10,12 @@
 #' @noRd
 .detect_fc <- function() {
   compiler <- tryCatch(
-    system2("R", args = c("CMD", "config", "FC"), stdout = TRUE, stderr = FALSE),
+    system2(
+      "R",
+      args = c("CMD", "config", "FC"),
+      stdout = TRUE,
+      stderr = FALSE
+    ),
     error = function(e) ""
   )
   compiler <- compiler[nzchar(compiler)][1]
@@ -56,7 +61,7 @@ find_make <- function() {
 
   if (os == "windows") {
     candidates <- Sys.which(c("make", "mingw32-make"))
-    make       <- candidates[nzchar(candidates)][1]
+    make <- candidates[nzchar(candidates)][1]
   } else {
     make <- Sys.which("make")
   }
@@ -91,10 +96,9 @@ find_make <- function() {
 #'
 #' @noRd
 check_sys_deps <- function(verbose = TRUE) {
-
-  deps_ok  <- TRUE
+  deps_ok <- TRUE
   make_out <- ""
-  fc_out   <- ""
+  fc_out <- ""
 
   # Check make
   make_out <- tryCatch(find_make(), error = function(e) "")
@@ -172,12 +176,11 @@ check_sys_deps <- function(verbose = TRUE) {
 #'
 #' @export
 download_source <- function(
-    dest_dir = fs::path_temp("aquacrop_source"),
-    url      = "https://github.com/KUL-RSDA/AquaCrop/archive/refs/heads/main.zip",
-    timeout  = 120,
-    verbose  = TRUE
+  dest_dir = fs::path_temp("aquacrop_source"),
+  url = "https://github.com/KUL-RSDA/AquaCrop/archive/refs/heads/main.zip",
+  timeout = 120,
+  verbose = TRUE
 ) {
-
   fs::dir_create(dest_dir, recurse = TRUE)
   zip_file <- fs::path(dest_dir, "aquacrop_main.zip")
 
@@ -185,7 +188,9 @@ download_source <- function(
   on.exit(options(timeout = old_timeout), add = TRUE)
   options(timeout = timeout)
 
-  if (verbose) message("Downloading from: ", url)
+  if (verbose) {
+    message("Downloading from: ", url)
+  }
   tryCatch(
     utils::download.file(url, zip_file, mode = "wb", quiet = !verbose),
     error = function(e) {
@@ -193,14 +198,18 @@ download_source <- function(
     }
   )
 
-  if (verbose) message("Extracting...")
+  if (verbose) {
+    message("Extracting...")
+  }
   utils::unzip(zip_file, exdir = dest_dir)
 
   extracted_name <- fs::path(dest_dir, "AquaCrop-main")
-  final_dir      <- fs::path(dest_dir, "AquaCrop")
+  final_dir <- fs::path(dest_dir, "AquaCrop")
 
   if (fs::dir_exists(extracted_name)) {
-    if (fs::dir_exists(final_dir)) fs::dir_delete(final_dir)
+    if (fs::dir_exists(final_dir)) {
+      fs::dir_delete(final_dir)
+    }
     fs::file_move(extracted_name, final_dir)
   }
 
@@ -241,24 +250,23 @@ download_source <- function(
 #'
 #' @export
 build_source <- function(
-    source_dir,
-    compiler = NULL,
-    target   = "all",
-    verbose  = TRUE
+  source_dir,
+  compiler = NULL,
+  target = "all",
+  verbose = TRUE
 ) {
-
   if (!target %in% c("all", "bin", "lib")) {
     stop("target must be 'all', 'bin', or 'lib'.", call. = FALSE)
   }
 
   source_dir <- fs::path_expand(source_dir)
-  src_dir    <- fs::path(source_dir, "src")
+  src_dir <- fs::path(source_dir, "src")
 
   if (!fs::dir_exists(src_dir)) {
     stop("Source directory not found: ", src_dir, call. = FALSE)
   }
 
-  os   <- get_os()
+  os <- get_os()
   make <- find_make()
 
   if (is.null(compiler)) {
@@ -271,15 +279,26 @@ build_source <- function(
   }
 
   make_args <- c(target, paste0("FC=", compiler))
-  if (os == "windows") make_args <- c(make_args, "CPPFLAGS=-D_WINDOWS")
+  if (os == "windows") {
+    make_args <- c(make_args, "CPPFLAGS=-D_WINDOWS")
+  }
 
   if (verbose) {
     message(
-      "Building AquaCrop (", os, ")\n",
-      "  directory : ", src_dir,  "\n",
-      "  make      : ", make,     "\n",
-      "  compiler  : ", compiler, "\n",
-      "  target    : ", target
+      "Building AquaCrop (",
+      os,
+      ")\n",
+      "  directory : ",
+      src_dir,
+      "\n",
+      "  make      : ",
+      make,
+      "\n",
+      "  compiler  : ",
+      compiler,
+      "\n",
+      "  target    : ",
+      target
     )
   }
 
@@ -290,20 +309,28 @@ build_source <- function(
   status <- attr(result, "status")
   if (!is.null(status) && status != 0) {
     stop(
-      "Build failed with exit code ", status, ":\n",
+      "Build failed with exit code ",
+      status,
+      ":\n",
       paste(result, collapse = "\n"),
       call. = FALSE
     )
   }
 
-  exe_name <- if (os == "windows") "aquacrop.exe" else "aquacrop"
+  exe_name <- .aquacrop_exe_name(os)
   exe_path <- fs::path(src_dir, exe_name)
 
   if (!fs::file_exists(exe_path)) {
-    stop("Build succeeded but executable not found:\n  ", exe_path, call. = FALSE)
+    stop(
+      "Build succeeded but executable not found:\n  ",
+      exe_path,
+      call. = FALSE
+    )
   }
 
-  if (verbose) message("Build successful: ", exe_path)
+  if (verbose) {
+    message("Build successful: ", exe_path)
+  }
 
   exe_path
 }
@@ -365,17 +392,16 @@ build_source <- function(
 #'
 #' @export
 install_source <- function(
-    install_dir = getwd(),
-    compiler    = NULL,
-    keep_source = FALSE,
-    force       = FALSE,
-    verbose     = TRUE
+  install_dir = getwd(),
+  compiler = NULL,
+  keep_source = FALSE,
+  force = FALSE,
+  verbose = TRUE
 ) {
-
   install_dir <- fs::path_expand(install_dir)
   fs::dir_create(install_dir, recurse = TRUE)
 
-  exe_name  <- if (.Platform$OS.type == "windows") "aquacrop.exe" else "aquacrop"
+  exe_name <- .aquacrop_exe_name()
   final_exe <- fs::path(install_dir, exe_name)
 
   if (fs::file_exists(final_exe) && !force) {
@@ -385,30 +411,47 @@ install_source <- function(
   }
 
   # Step 1: check build tools, detect compiler once
-  if (verbose) message("[1/4] Checking dependencies...")
+  if (verbose) {
+    message("[1/4] Checking dependencies...")
+  }
   deps <- check_sys_deps(verbose = FALSE)
 
-  if (is.null(compiler)) compiler <- deps$compiler
-  if (verbose) message("      compiler: ", .fc_binary(compiler))
+  if (is.null(compiler)) {
+    compiler <- deps$compiler
+  }
+  if (verbose) {
+    message("      compiler: ", .fc_binary(compiler))
+  }
 
   # Step 2: download
-  if (verbose) message("[2/4] Downloading source...")
-  temp_dir   <- fs::path_temp("aquacrop_build")
+  if (verbose) {
+    message("[2/4] Downloading source...")
+  }
+  temp_dir <- fs::path_temp("aquacrop_build")
   source_dir <- download_source(dest_dir = temp_dir, verbose = FALSE)
 
   # Step 3: compile
-  if (verbose) message("[3/4] Compiling...")
-  exe_path <- build_source(source_dir = source_dir, compiler = compiler,
-                           verbose = FALSE)
+  if (verbose) {
+    message("[3/4] Compiling...")
+  }
+  exe_path <- build_source(
+    source_dir = source_dir,
+    compiler = compiler,
+    verbose = FALSE
+  )
 
   # Step 4: install
   if (!fs::file_exists(exe_path)) {
     stop("Compilation succeeded but executable not found.", call. = FALSE)
   }
   fs::file_copy(exe_path, final_exe, overwrite = TRUE)
-  if (.Platform$OS.type != "windows") fs::file_chmod(final_exe, "755")
+  if (get_os() != "windows") {
+    fs::file_chmod(final_exe, "755")
+  }
 
-  if (!keep_source) fs::dir_delete(temp_dir)
+  if (!keep_source) {
+    fs::dir_delete(temp_dir)
+  }
 
   if (verbose) {
     message("[4/4] Installed: ", final_exe)

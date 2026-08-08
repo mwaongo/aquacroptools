@@ -1,101 +1,156 @@
-#' Run AquaCrop simulation
+#' Run an AquaCrop simulation
 #'
-#' Execute AquaCrop in the current directory. The directory must contain
-#' the AquaCrop executable (aquacrop.exe on Windows, aquacrop on Linux/macOS).
+#' Executes the AquaCrop executable in the current working directory. The
+#' directory must contain the AquaCrop executable (`aquacrop.exe` on Windows,
+#' `aquacrop` on Linux/macOS) together with a valid AquaCrop project structure.
 #'
-#' @param verbose Logical. Print messages (default: TRUE).
-#'
-#' @return Invisibly returns the exit status (0 = success, non-zero = error).
-#'
-#' @details
-#' This function must be run from a directory containing the AquaCrop executable.
-#' The directory should also contain the standard AquaCrop folder structure
-#' (CLIMATE/, CROP/, SOIL/, MANAGEMENT/, LIST/, OUTP/, etc.).
-#'
-#' The OUTP/ directory is cleaned before running to avoid mixing results from
-#' different runs. Temporary files (AllDone.OUT, ListProjectsLoaded.OUT) are
+#' Before execution, all files in the `OUTP/` directory are removed to prevent
+#' mixing outputs from previous simulations. Temporary files created by
+#' AquaCrop (`AllDone.OUT` and `ListProjectsLoaded.OUT`) are automatically
 #' removed after execution.
+#'
+#' @param verbose Logical. Should progress messages be printed?
+#'   Defaults to `TRUE`.
+#'
+#' @return Invisibly returns the AquaCrop exit status (`0` indicates success).
+#'
+#' @seealso [init_aquacrop()], [install_binaries()]
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Initialize project and run
 #' init_aquacrop("~/my-project")
 #' setwd("~/my-project")
-#' run_aquacrop()
 #'
-#' # Silent mode
+#' run_aquacrop()
 #' run_aquacrop(verbose = FALSE)
 #' }
 run_aquacrop <- function(verbose = TRUE) {
-  # ---- Determine executable name based on OS ----
-  if (.Platform$OS.type == "windows") {
-    exe_name <- "aquacrop.exe"
-    cmd <- "aquacrop.exe"
+  # determine executable name based on os
+
+  os <- get_os()
+  exe_name <- .aquacrop_exe_name(os)
+
+  cmd <- if (os == "windows") {
+    exe_name
   } else {
-    exe_name <- "aquacrop"
-    cmd <- "./aquacrop"
+    paste0("./", exe_name)
   }
 
-  # ---- Check if executable exists ----
-  if (!file.exists(exe_name)) {
-    # Check if ALL typical AquaCrop folders are present
-    aquacrop_folders <- c(
-      "CLIMATE", "CROP", "SOIL", "SIMUL", "OUTP",
-      "MANAGEMENT", "PARAM", "LIST"
-    )
-    all_folders_present <- all(dir.exists(aquacrop_folders))
+  # validate if project dir and executable can be runned
 
-    if (all_folders_present) {
-      # Complete AquaCrop project structure but binary is missing
+  if (!file.exists(exe_name)) {
+    required_dirs <- c(
+      "CLIMATE",
+      "CROP",
+      "SOIL",
+      "SIMUL",
+      "OUTP",
+      "MANAGEMENT",
+      "PARAM",
+      "LIST"
+    )
+
+    if (all(dir.exists(required_dirs))) {
       stop(
-        "AquaCrop executable not found: ", exe_name, "\n",
-        "This seems to be an AquaCrop project directory, but the binary is missing.\n\n",
-        "Solution:\n",
+        "AquaCrop executable not found: ",
+        exe_name,
+        ".\n\n",
+        "This appears to be a valid AquaCrop project, but the executable ",
+        "is missing.\n\n",
+        "Install it with:\n",
         "  install_binaries(path = \".\")",
         call. = FALSE
       )
-    } else {
-      # Not a complete AquaCrop project
-      stop(
-        "AquaCrop executable not found: ", exe_name, "\n",
-        "You must run this function from a directory containing the AquaCrop binary.\n\n",
-        "Solutions:\n",
-        "  1. Initialize new project: init_aquacrop(path = \"my-project\")\n",
-        "  2. If already in project: install_binaries(path = \".\")\n",
-        "  3. Change to correct directory: setwd(\"/path/to/aquacrop/project\")",
-        call. = FALSE
-      )
     }
+
+    stop(
+      "AquaCrop executable not found: ",
+      exe_name,
+      ".\n\n",
+      "This directory does not appear to be a valid AquaCrop project.\n\n",
+      "Possible solutions:\n",
+      "  - Create a new project with init_aquacrop().\n",
+      "  - Install the AquaCrop executable with install_binaries().\n",
+      "  - Change to the correct project directory using setwd().",
+      call. = FALSE
+    )
   }
 
-  # ---- Ensure executable permissions on Unix ----
-  if (.Platform$OS.type != "windows") {
+  # set binary executable permission on unix systems
+
+  if (os != "windows") {
     Sys.chmod(exe_name, mode = "0755")
   }
 
-  # ---- Clean output directory ----
+  # clean OUTP dir
+  on.exit(
+    {
+      tmp_files <- c(
+        "AllDone.OUT",
+        "ListProjectsLoaded.OUT"
+      )
+
+      tmp_files <- tmp_files[file.exists(tmp_files)]
+
+      if (length(tmp_files) > 0L) {
+        fs::file_delete(tmp_files)
+      }
+    },
+    add = TRUE
+  )
+
+  # clean previous output
+
   if (dir.exists("OUTP")) {
-    fs::file_delete(fs::dir_ls("OUTP"))
-  }
+    out_files <- fs::dir_ls("OUTP", recurse = FALSE)
 
-  # ---- Run AquaCrop ----
-  if (verbose) {
-    message("Running AquaCrop in: ", getwd())
-  }
-
-  result <- system2(cmd, stdout = "", stderr = "")
-
-  # ---- Check result ----
-  if (result != 0) {
-    warning("AquaCrop exited with status: ", result, call. = FALSE)
-  } else {
-    if (verbose) {
-      message("AquaCrop ran successfully!")
-      message("Check results in OUTP/ directory")
+    if (length(out_files) > 0L) {
+      fs::file_delete(out_files)
     }
   }
 
-  invisible(result)
+  # run aquacrop binary
+  if (verbose) {
+    message("Running AquaCrop in ", normalizePath(getwd()))
+  }
+
+  output <- system2(
+    command = cmd,
+    stdout = TRUE,
+    stderr = TRUE
+  )
+
+  status <- attr(output, "status")
+  if (is.null(status)) {
+    status <- 0L
+  }
+
+  # report running result
+  if (status == 0L) {
+    if (verbose) {
+      message("AquaCrop completed successfully.")
+      message("Results written to OUTP/.")
+    }
+  } else {
+    warning(
+      paste0(
+        "AquaCrop exited with status ",
+        status,
+        ".",
+        if (length(output) > 0L) {
+          paste0(
+            "\n\nAquaCrop output:\n",
+            paste(output, collapse = "\n")
+          )
+        } else {
+          ""
+        }
+      ),
+      call. = FALSE
+    )
+  }
+
+  invisible(status)
 }

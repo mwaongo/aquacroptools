@@ -93,7 +93,7 @@ path_for_prm <- function(dir_name, use_standalone = TRUE, base_path = NULL) {
   dir_name <- sub("[/\\\\]+$", "", dir_name)  # Remove trailing slashes
 
   # Auto-detect OS
-  is_windows <- .Platform$OS.type == "windows"
+  is_windows <- get_os() == "windows"
 
   # Generate path based on standalone mode
   if (use_standalone) {
