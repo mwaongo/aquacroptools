@@ -19,6 +19,7 @@
 #' @importFrom readr write_delim
 #' @importFrom readr write_file
 #' @importFrom readr write_lines
+#' @importFrom rlang .data
 #' @importFrom stringr str_ends
 #' @importFrom tibble as_tibble
 #' @importFrom utils download.file

@@ -7,7 +7,7 @@
 write_cro(
   path = "CROP/",
   crop_name = "generic-crop-name",
-  eol = "windows",
+  eol = NULL,
   params = NULL
 )
 }

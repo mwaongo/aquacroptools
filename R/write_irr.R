@@ -444,7 +444,7 @@ create_irr_schedule <- function(from_day, time_crit, depth_crit, ecw,
   )
 
   # Sort data
-  irr_data <- irr_data %>% dplyr::arrange(day)
+  irr_data <- irr_data |> dplyr::arrange(.data$day)
 
   # Build section header
   section <- paste0(

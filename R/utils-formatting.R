@@ -86,7 +86,7 @@
 #' @keywords internal
 #' @noRd
 .get_sprintf_format <- function(string) {
-  s <- string %>%
+  s <- string |>
     stringr::str_extract_all(pattern = ".", simplify = TRUE)
   fmt <- ""
   for (i in 2:5) {

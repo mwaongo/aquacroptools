@@ -47,7 +47,7 @@
 #' # Example 1: multiple stations, same irrigation events (mode 1)
 #' irr <- data.frame(day = c(20, 40, 60), depth = c(30, 30, 25))
 #' stations <- c("grid_001", "grid_002")
-#' write_irrig_batch(
+#' write_irr_batch(
 #'   site_name = stations,
 #'   method       = 1,
 #'   wet_surface  = 100,
@@ -60,7 +60,7 @@
 #'   data.frame(day = c(20, 40), depth = c(30, 25)),
 #'   data.frame(day = c(25, 45), depth = c(35, 30))
 #' )
-#' write_irrig_batch(
+#' write_irr_batch(
 #'   site_name = stations,
 #'   method       = 1,
 #'   wet_surface  = 100,
@@ -70,7 +70,7 @@
 #' )
 #'
 #' # Example 3: auto-discover all stations, silent mode
-#' write_irrig_batch(
+#' write_irr_batch(
 #'   site_name = NULL,
 #'   method       = 4,
 #'   wet_surface  = 60,
@@ -85,7 +85,7 @@
 #'
 #' @importFrom fs path file_exists dir_exists dir_ls file_delete
 #' @export
-write_irrig_batch <- function(
+write_irr_batch <- function(
     site_name = NULL,
     method,
     wet_surface,
@@ -116,7 +116,7 @@ write_irrig_batch <- function(
   )
 
   n <- length(site_name)
-  .warn_single_item(n, "write_irrig_batch", "write_irr", verbose)
+  .warn_single_item(n, "write_irr_batch", "write_irr", verbose)
 
   # Normalize irr_data: single data.frame applied to all stations
   if (is.data.frame(irr_data)) {

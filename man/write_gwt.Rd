@@ -8,7 +8,7 @@ write_gwt(
   site_name,
   code,
   gwt_data = NULL,
-  path = "MANAGEMENT/",
+  path = "SOIL/",
   start_day = 1,
   start_month = 1,
   start_year = 1901,
@@ -40,7 +40,7 @@ For code 2: a data.frame with columns:
 \item{ecw}{Numeric. Electrical conductivity in dS/m.}
 }}
 
-\item{path}{Output directory path for GWT files. Default: "MANAGEMENT/".}
+\item{path}{Output directory path for GWT files. Default: "SOIL/".}
 
 \item{start_day}{Integer. First day of observations (code 2 only).
 Default: 1.}

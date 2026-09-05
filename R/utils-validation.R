@@ -88,7 +88,7 @@
 #' @noRd
 .extract_station <- function(stn, data, default = "station") {
   if (is.null(stn) && "station" %in% names(data)) {
-    stn <- utils::head(data, 1) %>%
+    stn <- utils::head(data, 1) |>
       dplyr::pull("station")
   }
 
@@ -121,12 +121,12 @@
 #' @noRd
 .extract_years <- function(data, syear = NULL, eyear = NULL) {
   if (is.null(syear)) {
-    syear <- utils::head(data, 1) %>%
+    syear <- utils::head(data, 1) |>
       dplyr::pull("year")
   }
 
   if (is.null(eyear)) {
-    eyear <- utils::tail(data, 1) %>%
+    eyear <- utils::tail(data, 1) |>
       dplyr::pull("year")
   }
 

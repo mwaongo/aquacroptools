@@ -5,11 +5,13 @@
 #' temperature, ETo, and rainfall files, along with the appropriate CO2 concentration file
 #' for the simulation scenario.
 #'
-#' @param path Directory path where climate files are located and where .CLI will be written. Default = "weather/"
+#' @param path Directory path where climate files are located and where .CLI will be written. Default = "CLIMATE/"
 #' @param site_name Station name or identifier. The .Tnx, .ETo, and .PLU files with this
 #'   station name must exist in the path. Default = "station"
 #' @param eol End-of-line character style for the output file.
-#'   Options: "windows", "unix", "linux", or "macOS". Default = "windows"
+#'   Options: "windows", "linux", or "macos". If `NULL` (default), eol is
+#'   auto-detected from the host operating system, matching the other
+#'   AquaCrop file writers.
 #' @param scenario CO2 scenario to use. Options: "hist" (historical/Mauna Loa),
 #'   "rcp26", "rcp45", "rcp60", "rcp85", "ssp119", "ssp126", "ssp245", "ssp370", "ssp585".
 #'   Default = "hist"
@@ -85,23 +87,23 @@
 #'
 #' @export
 write_cli <- function(
-    path = "weather/",
+    path = "CLIMATE/",
     site_name = "station",
-    eol = "windows",
+    eol = NULL,
     scenario = "hist",
     check_files = TRUE) {
   # Ensure trailing slash on path
   path <- .add_trailing_slash(path)
 
   # Create directory if it doesn't exist
-  fs::dir_create(path, recurse = TRUE)
+  if (!dir.exists(path)) fs::dir_create(path, recurse = TRUE)
 
   # Use station name as-is for filenames
 
   # Check if required climate files exist
   if (check_files) {
     required_files <- paste0(path, site_name, c(".Tnx", ".ETo", ".PLU"))
-    missing_files <- required_files[!fs::file_exists(required_files)]
+    missing_files <- required_files[!file.exists(required_files)]
 
     if (length(missing_files) > 0) {
       stop(
@@ -143,9 +145,9 @@ write_cli <- function(
 
   # Copy CO2 file to path if it doesn't exist
   co2_target <- paste0(path, co2_file)
-  if (!fs::file_exists(co2_target)) {
+  if (!file.exists(co2_target)) {
     co2_source <- path_to_file(co2_file)
-    if (!fs::file_exists(co2_source)) {
+    if (!file.exists(co2_source)) {
       stop(
         "CO2 file '", co2_file, "' not found in package data.\n",
         "Source path: ", co2_source
@@ -173,11 +175,9 @@ write_cli <- function(
   # Write CLI file
   output_file <- paste0(path, site_name, ".CLI")
 
-  readr::write_lines(
-    x = cli_content,
-    file = output_file,
-    sep = sep
-  )
+  con <- base::file(output_file, open = "wb")
+  on.exit(close(con), add = TRUE)
+  writeLines(enc2utf8(cli_content), con, sep = sep, useBytes = TRUE)
 
   # Return invisibly with file path
   invisible(output_file)

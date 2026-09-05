@@ -54,7 +54,7 @@
 write_cro <- function(
     path = "CROP/",
     crop_name = "generic-crop-name",
-    eol = "windows",
+    eol = NULL,
     params = NULL) {
   # Handle NULL params
   if (is.null(params)) {
@@ -69,7 +69,7 @@ write_cro <- function(
 
   # Load CropData
 
-  utils::data("CropData", envir = environment())
+  CropData <- .pkg_data("CropData")
   valid_names <- CropData$name
 
   # Validate parameter names
@@ -86,20 +86,20 @@ write_cro <- function(
   }
 
   # Process parameters
-  value <- params %>%
-    unlist() %>%
+  value <- params |>
+    unlist() |>
     as.vector()
 
-  description <- CropData %>%
-    dplyr::filter(name %in% names(params)) %>%
+  description <- CropData |>
+    dplyr::filter(.data$name %in% names(params)) |>
     dplyr::pull(description)
 
-  fmt <- CropData %>%
-    dplyr::filter(name %in% names(params)) %>%
+  fmt <- CropData |>
+    dplyr::filter(.data$name %in% names(params)) |>
     dplyr::pull(fmt)
 
-  width <- CropData %>%
-    dplyr::filter(name %in% names(params)) %>%
+  width <- CropData |>
+    dplyr::filter(.data$name %in% names(params)) |>
     dplyr::pull(width)
 
   new_vars <- tibble::tibble(
@@ -110,23 +110,23 @@ write_cro <- function(
     width = width
   )
   # Combine with defaults and prepare output
-  crop_info <- CropData %>%
-    dplyr::filter(!(name %in% names(params))) %>%
-    dplyr::bind_rows(new_vars) %>%
-    dplyr::arrange(name) %>%
+  crop_info <- CropData |>
+    dplyr::filter(!(.data$name %in% names(params))) |>
+    dplyr::bind_rows(new_vars) |>
+    dplyr::arrange(.data$name) |>
     dplyr::mutate(
       value = .format_string2(
         string = value,
         fmt = fmt,
         width = width
       )
-    ) %>%
+    ) |>
     dplyr::select(value, description)
 
   # Get line ending and header
   sep <- .get_eol(eol = eol)
 
-  header <- .get_crop_header(crop = crop_name) %>%
+  header <- .get_crop_header(crop = crop_name) |>
     glue::glue("\n", .sep = sep)
 
   # Write file

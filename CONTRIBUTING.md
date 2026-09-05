@@ -29,6 +29,8 @@ Good bug reports are fixed faster. Please include:
 
 ## Development setup
 
+Requires R >= 4.1.
+
 ```r
 # install.packages(c("devtools", "roxygen2", "testthat"))
 devtools::install_github("mwaongo/aquacropr")
@@ -55,9 +57,21 @@ devtools::check()       # full R CMD check
   `@examples`); internal helpers get a short `@noRd` comment explaining things.
 - Avoid introducing new dependencies unless necessary; prefer base R or a
   package already imported (see `DESCRIPTION`).
-- Don't use syntax newer than R 3.5 (the package's declared minimum) —
-  notably, no native pipe `|>` or lambda shorthand `\(x)`. Use `%>%`
-  (already imported) and `function(x)` instead.
+- The package requires **R >= 4.1** (see `Depends` in `DESCRIPTION`), so the
+  native pipe `|>` is available and is what package code uses. Prefer it over
+  magrittr's `%>%` in new code. `%>%` is still re-exported for users, so it
+  remains valid in examples and vignettes, but don't reach for it internally.
+  Note that `|>` has no `.` placeholder — if you need one, restructure the
+  call rather than switching back to `%>%`.
+- Lambda shorthand `\(x)` is likewise available, but the codebase currently
+  spells these `function(x)`; match the file you're editing.
+- Refer to data-frame columns inside dplyr verbs with the `.data` pronoun
+  (`.data$year`) and inside tidyselect calls with strings (`select("year")`).
+  The package carries no `utils::globalVariables()` list, and `R CMD check`
+  will flag a bare column name as an undefined global.
+- Source files have mixed line endings — some are LF, some CRLF. Preserve
+  whatever the file you're editing already uses; a whole-file conversion
+  buries a one-line change in a few hundred lines of diff.
 
 ## Before opening a pull request
 
@@ -65,12 +79,21 @@ devtools::check()       # full R CMD check
    signature, and commit the resulting changes to `NAMESPACE` and `man/`.
    Stale generated docs are a common source of review friction here.
 2. Run `devtools::check()` and make sure it reports **0 errors, 0 warnings,
-   0 notes** before submitting. Vignettes require Pandoc locally
-   (`devtools::check(vignettes = FALSE)` if you don't have it installed).
-3. Add or update tests for the behavior you changed, if applicable.
-4. Add a one-line entry to the top of [`NEWS.md`](NEWS.md) describing the
-   user-facing change. Keep it to a single bullet per change — this project
-   favors brief, flat changelog entries over elaborate multi-section write-ups.
+   0 notes** before submitting. Vignettes require Pandoc locally; skipping
+   vignette building (`devtools::check(vignettes = FALSE)`, or
+   `R CMD check --no-build-vignettes`) produces two warnings about a missing
+   `inst/doc` that are an artifact of skipping, not a defect — everything
+   else should still be clean.
+3. Add or update tests in `tests/testthat/` for the behavior you changed.
+   For the file writers, the most useful test is usually a comparison against
+   known-good output: several of them are byte-sensitive, and a round-trip
+   through the matching `read_*()` catches formatting regressions that a
+   "does it run" test will not.
+4. Add an entry to the top of [`NEWS.md`](NEWS.md) describing the user-facing
+   change. Small releases are a flat bullet list; larger ones group bullets
+   under `##` headings (see 0.2.0). Say what changed and, for a fix, what the
+   old behaviour was — a reader should be able to tell whether it affected
+   them without opening the diff.
 5. Target the `master` branch with your pull request.
 
 ## Pull request review

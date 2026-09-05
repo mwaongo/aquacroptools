@@ -1,136 +1,30 @@
-# internal, not exported
-.aquacrop_state <- new.env(parent = emptyenv())
+# Package-level state. Both environments are internal and not exported.
 
-# default (can be changed later if needed)
+# Currently unused; kept as scaffolding for a configurable version.
+.aquacrop_state <- new.env(parent = emptyenv())
 .aquacrop_state$version <- "7.1 (August 2023)"
 
+# Values that are constant for the lifetime of the session but would otherwise
+# be recomputed on every file written (currently the OS name; see get_os()).
+.aquacropr_cache <- new.env(parent = emptyenv())
 
-#' @importFrom utils globalVariables
-utils::globalVariables(
-  c(
-    # Climate/weather columns
-    "tmin",
-    "tmax",
-    "et0",
-    "rain",
-    "year",
-    "month",
-    "day",
-    # General
-    "x",
-    "path",
-    "%>%",
-    ".",
-    # Data objects
-    "SoilWater",
-    "CropData",
-    "ManData",
-    "SWOData",
-    # Soil columns
-    "description",
-    "sat",
-    "fc",
-    "wp",
-    "ksat",
-    "cra",
-    "crb",
-    "penetrability",
-    "gravel",
-    "thickness",
-    "water_content",
-    "ece",
-    "thickness_fmt",
-    "water_content_fmt",
-    "ece_fmt",
-    "thickness_vec",
-    # Crop/Management columns
-    "name",
-    "value",
-    "fmt",
-    "width",
-    # Dynamic var columns (write_prm)
-    "var_02",
-    "var_03",
-    "var_04",
-    "var_05",
-    "var_06",
-    "var_07",
-    "var_08",
-    "var_09",
-    "var_10",
-    "var_11",
-    "var_12",
-    "var_13",
-    "var_14",
-    "var_15",
-    "var_16",
-    "var_17",
-    "var_18",
-    "var_19",
-    "var_20",
-    "var_21",
-    "var_22",
-    "var_23",
-    "var_24",
-    "var_25",
-    "var_26",
-    "var_27",
-    "var_28",
-    "var_29",
-    "var_30",
-    "var_31",
-    "var_32",
-    "var_33",
-    "var_34",
-    "var_35",
-    "var_36",
-    "var_37",
-    "var_38",
-    "var_39",
-    "var_40",
-    "var_41",
-    "var_42",
-    "var_43",
-    "var_44",
-    "var_45",
-    "var_46",
-    "var_47",
-    "var_48",
-    "var_49",
-    "var_50",
-    "var_51",
-    "var_52",
-    "var_53",
-    "var_54",
-    "var_55",
-    "var_56",
-    "var_57",
-    "var_58",
-    "var_59",
-    "var_60",
-    "var_61",
-    "var_62",
-    "var_63",
-    "var_64",
-    "var_65",
-    "var_66",
-    "var_67",
-    "var_68",
-    "var_69",
-    "var_70",
-    "var_71",
-    "var_72",
-    "var_73",
-    "var_74",
-    "var_75",
-    "var_76",
-    "var_77",
-    "var_78",
-    "var_79",
-    "var_80",
-    "var_81",
-    "var_82",
-    "var_83",
-    "var_84"
-  )
-)
+
+#' Retrieve a Package Dataset
+#'
+#' @description
+#' Fetches one of the package's lazy-loaded datasets (`SoilWater`, `CropData`,
+#' `ManData`, `SWOData`) by name.
+#'
+#' Package code used to reach these via `utils::data(name, envir =
+#' environment())`, which binds the object at run time but leaves it invisible
+#' to `R CMD check` -- every dataset then had to be declared in
+#' `utils::globalVariables()`. Going through the namespace keeps the reference
+#' explicit and checkable.
+#'
+#' @param name Character. Name of the dataset.
+#' @return The dataset.
+#' @keywords internal
+#' @noRd
+.pkg_data <- function(name) {
+  get(name, envir = asNamespace("aquacropr"))
+}

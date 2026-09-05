@@ -15,7 +15,8 @@ write_climate(
   scenario = "hist",
   eol = NULL,
   syear = NULL,
-  eyear = NULL
+  eyear = NULL,
+  quiet = FALSE
 )
 }
 \arguments{
@@ -64,6 +65,10 @@ See \code{\link{write_plu}}, \code{\link{write_eto}}, and \code{\link{write_tnx}
 \item{eyear}{End year of the data period (extracted from \code{data} if not provided).
 Default = NULL.
 See \code{\link{write_plu}}, \code{\link{write_eto}}, and \code{\link{write_tnx}} for details.}
+
+\item{quiet}{Logical. If \code{TRUE}, suppress the progress messages. Each call
+otherwise reports six lines, which is noisy when writing files for many
+stations at once. Default = \code{FALSE}.}
 }
 \value{
 Invisibly returns a named list with paths to all created files:

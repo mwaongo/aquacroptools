@@ -1,9 +1,9 @@
 ---
-title: "Onset of the Growing Season: Methods, Limitations, and Sahelian Realities"
+title: "Sowing Dates: Extensible Onset Detection in aquacropr"
 output: rmarkdown::html_vignette
 vignette: >
+  %\VignetteIndexEntry{Sowing Dates: Extensible Onset Detection in aquacropr}
   %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{Onset of the Growing Season: Methods, Limitations, and Sahelian Realities}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options:
   markdown:
@@ -12,399 +12,242 @@ editor_options:
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment  = "#>",
-  eval     = FALSE
+  eval    = FALSE,
+  echo    = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  comment = "#>"
 )
 ```
 
-## Background and design rationale
+## Overview
 
-### A limitation of the AquaCrop standalone
+AquaCrop requires a planting date for each simulation year. For rainfed
+crops, this date is often derived from the onset of the rainy season.
 
-**On the `.CAL` file.** 
-The `.CAL` file works as intended in the
-AquaCrop GUI, which appears to use it to derive sowing dates before
-writing the project master file (`.PRM`). In standalone mode, the
-exact mechanism is not documented — but the sowing date embedded in
-the `.PRM` is the only input AquaCrop needs to anchor the growing
-period. Whether or not the standalone re-evaluates the onset rule at
-runtime is therefore, in practice, irrelevant.
+The AquaCrop standalone provides a fixed set of criteria for determining
+this onset. These criteria cover common rainfall- and temperature-based
+rules, but they cannot represent every agronomic definition of the
+beginning of a growing season.
 
+This becomes important in rainfall-limited environments. In the Sahel,
+for example, the first substantial rainfall event may be followed by a
+long dry spell. A rainfall threshold can therefore identify a date that
+is meteorologically plausible but unsuitable for crop establishment.
 
+`aquacropr` addresses both issues by moving onset detection into R.
+
+The package reproduces the native AquaCrop criteria, but is not limited
+to them. The same framework can implement onset definitions based on
+rainfall accumulation, dry spells, temperature, multiple conditions, or
+other indicators derived from daily climate data.
+
+Three additional methods are currently implemented for Sahelian
+applications: Sivakumar (1988), Marteau et al. (2009), and a fuzzy
+criterion based on Waongo et al. (2014). They illustrate the main added
+value of the approach: **the onset criterion becomes extensible, while
+the resulting simulation remains compatible with AquaCrop**.
+
+This vignette describes the onset engine, the available criteria, and
+the principles for extending it.
+
+> **Reproducibility**
+>
+> Code in this vignette is shown but not executed. The complete dataset
+> used to reproduce the examples is distributed separately because the
+> archive is approximately 1 GB.
+>
+> **Data:** hosted on [OSF](https://osf.io) as `TEST.zip`
+> (`<OSF_DIRECT_DOWNLOAD_URL>` -- see the "Regional Crop Simulations"
+> vignette's "Download the example dataset" section for the download
+> code and archive contents).
+
+## From an AquaCrop criterion to an extensible onset engine
+
+### The AquaCrop workflow
+
+The `.CAL` file describes how the beginning of the growing season should
+be determined.
+
+In the AquaCrop GUI, this information is used to derive sowing dates
+before the project master file (`.PRM`) is written. For the standalone
+simulation, the essential result is the planting date stored in the
+`.PRM`.
+
+This creates a useful separation between two tasks:
+
+1. determining *when planting should occur*; and
+2. simulating the crop from that planting date.
+
+`aquacropr` uses this separation to make the first task extensible.
 
 ### The `aquacropr` approach
 
-What `aquacropr` does is straightforward: `find_onset()` reads the
-`.CAL`, computes the sowing date series from the climate data, and
-`write_prm()` writes those dates directly into the `.PRM`. The
-standalone receives exactly what it expects. By owning this
-computation in R, `aquacropr` is free to implement any onset rule
-that can be expressed as a function of daily climate data — the four
-native AquaCrop criteria are fully reproduced, and three additional
-methods designed for rainfall-limited environments are added on top.
+`find_onset()` implements onset detection in R.
 
-**You do not need to call `find_onset()` for simulations to work.**
-When you pass a `.CAL` to `write_prm()` and launch a simulation with
-`run_aquacrop()`, onset dates are computed and embedded automatically.
-`find_onset()` is provided so you can inspect, validate, and compare
-onset dates before committing to a configuration — a transparent window
-into the planting-date engine, not a required step.
+It reads the `.CAL` configuration and the required climate data, applies
+the selected criterion to each year, and returns the corresponding
+planting dates.
 
-The typical workflow is:
+`write_prm()` uses the same engine to place these dates in the `.PRM`
+file expected by AquaCrop.
+
+The simulation itself does not need to know how the planting date was
+obtained.
+
+This is the key design choice.
+
+A planting date can come from a native AquaCrop criterion, a published
+agroclimatic definition, or a more specialized rule implemented in
+`aquacropr`. Once the date has been determined, the downstream AquaCrop
+workflow is unchanged.
+
+The package therefore preserves compatibility with AquaCrop while
+removing the onset calculation from a fixed set of criteria.
+
+```text
+Climate data
+     |
+     v
+   .CAL
+     |
+     v
+aquacropr onset engine
+     |
+     +-- Native AquaCrop criteria
+     |
+     +-- Sivakumar
+     |
+     +-- Marteau
+     |
+     +-- Fuzzy criterion
+     |
+     +-- Future criteria
+     |
+     v
+Planting date for each year
+     |
+     v
+   .PRM
+     |
+     v
+AquaCrop standalone
+```
+
+This architecture also makes onset detection easier to inspect and test.
+The dates can be examined before a crop simulation is launched.
 
 ```{r workflow}
-library(aquacropr)
-
-# 1. Choose and encode your onset rule
-write_cal(
-  site_name       = "Ouaga",
-  onset           = "rainfall",
-  window_start    = 100,
-  window_length   = 120,
-  criterion       = 2,
-  preset_value    = 20,
+aquacropr::write_cal(
+  site_name = "Ouaga",
+  onset = "rainfall",
+  window_start = 100,
+  window_length = 120,
+  criterion = 2,
+  preset_value = 20,
   successive_days = 3
 )
 
-# 2. (Optional but recommended) Inspect the resulting onset dates
-find_onset("Ouaga")
-#>   year onset_doy onset_date
-#> 1 1981       147 1981-05-27
-#> 2 1982       153 1982-06-02
-#> ...
+aquacropr::find_onset("Ouaga")
 
-# 3. Pass the .CAL to write_prm() — everything else is automatic
-write_prm(site_name = "Ouaga", ...)
+aquacropr::write_prm(
+  site_name = "Ouaga",
+  ...
+)
 ```
 
+Calling `find_onset()` explicitly is optional. It is useful when onset
+dates need to be inspected, compared, or validated before running the
+simulation.
 
+## Available onset methods
 
-## Novel implementations in `aquacropr`
+The current implementation supports fixed, rainfall, and thermal onset.
 
-The three Sahelian methods below are **exclusively available in
-`aquacropr`**. They are not accessible through the AquaCrop
-standalone GUI and are not part of the official AquaCrop criterion
-set.
-
-| Method | Origin | Available in AquaCrop standalone |
+| `onset` | Climate file | Typical use |
 |---|---|---|
-| Native criteria 1–4 (rainfall) | AquaCrop / FAO | ✅ Yes |
-| Native criteria 1–4 (thermal) | AquaCrop / FAO | ✅ Yes |
-| **Sivakumar (1988)** | Agroclimatology literature | ❌ `aquacropr` only |
-| **Marteau et al. (2009)** | Agroclimatology literature | ❌ `aquacropr` only |
-| **Fuzzy logic — Criterion 5 (Waongo et al., 2014)** | Agroclimatology literature | ❌ `aquacropr` only |
+| `"fixed"` | `.PLU` | Prescribed planting date |
+| `"rainfall"` | `.PLU` | Rainfed crops |
+| `"thermal"` | `.Tnx` | Temperature-limited seasons |
 
-Their inclusion is a direct consequence of the reimplementation
-strategy: once onset detection is in R, adding a new method is a matter
-of implementing a new decision function — no recompilation, no GUI
-patch required.
+Within these types, `aquacropr` reproduces the native AquaCrop criteria
+and adds methods that are not available in the standalone.
 
-
-## Why onset matters
-
-In rainfed agriculture, the onset of the growing season is the most
-consequential decision a farmer makes each year. Sow too early and a
-dry spell after germination can be fatal. Sow too late and the season
-is too short to reach maturity. In the Sahel, where the rainy season
-lasts 90 to 150 days and rainfall is highly variable in time and space,
-the planting date alone can explain yield differences of 20% or more
-between identical fields in the same year (Waongo et al., 2014).
-
-Getting the onset rule right is therefore not a technical detail — it
-is the agronomic foundation of your simulation.
-
-
-## The three onset types
-
-`write_cal()` supports three `onset` values, each determining which
-climate file `find_onset()` will read at runtime.
-
-| `onset`      | Climate file        | Typical use case                          |
-|--------------|---------------------|-------------------------------------------|
-| `"fixed"`    | `.PLU` (years only) | Fixed sowing calendar, irrigated systems  |
-| `"rainfall"` | `.PLU`              | Rainfed crops, semi-arid to sub-humid     |
-| `"thermal"`  | `.Tnx`              | Temperate crops, frost- or heat-triggered |
-
-For sub-Sahelian contexts, `onset = "rainfall"` is the appropriate
-choice in virtually all situations.
-
-
-
-## Native AquaCrop rainfall criteria (1–4)
-
-### Criterion 1 — Cumulative rainfall since the start of the window
-
-Onset is triggered as soon as cumulative rainfall since `window_start`
-reaches `preset_value` mm.
-
-```{r crit1}
-write_cal(
-  site_name     = "Ouaga",
-  onset         = "rainfall",
-  window_start  = 100,
-  window_length = 120,
-  criterion     = 1,
-  preset_value  = 25
-)
-```
-
-A single heavy convective event can trigger onset even if the following
-two weeks are completely dry — a common pattern in the northern Sahel.
-Best suited to wetter agroclimatic zones where the onset, once
-triggered, tends to be sustained.
-
-
-
-### Criterion 2 — Observed rainfall over N consecutive days
-
-Onset is triggered when total rainfall over `successive_days`
-consecutive days equals or exceeds `preset_value` mm.
-
-```{r crit2}
-write_cal(
-  site_name       = "Ouaga",
-  onset           = "rainfall",
-  window_start    = 100,
-  window_length   = 120,
-  criterion       = 2,
-  preset_value    = 20,
-  successive_days = 3
-)
-```
-
-This mirrors the agronomic rule used by extension services in Burkina
-Faso and Mali: ≥ 20 mm over 3 days provides sufficient soil moisture
-for germination of maize and sorghum. Setting `occurrences = 2`
-requires the condition to be met twice before onset is declared — a
-simple but effective filter against isolated convective events.
-
-
-
-### Criterion 3 — 10-day (dekadal) rainfall
-
-Onset is triggered when accumulated rainfall over the 10-day dekad
-containing day *j* equals or exceeds `preset_value` mm. Operationally
-aligned with the dekadal bulletins produced by national meteorological
-services across West Africa, including ANAM-BF.
-
-```{r crit3}
-write_cal(
-  site_name     = "Ouaga",
-  onset         = "rainfall",
-  window_start  = 100,
-  window_length = 120,
-  criterion     = 3,
-  preset_value  = 30
-)
-```
-
-
-
-### Criterion 4 — 10-day rainfall as a fraction of 10-day ETo
-
-Requires an `.ETo` file. Onset is triggered when 10-day rainfall
-exceeds `preset_value` percent of the 10-day reference
-evapotranspiration. Accounts for atmospheric demand — conceptually
-superior to rainfall-only thresholds in semi-arid environments, but
-requiring careful calibration given that pre-monsoon ETo in the Sahel
-can reach 8–10 mm/day.
-
-```{r crit4}
-write_cal(
-  site_name     = "Ouaga",
-  onset         = "rainfall",
-  window_start  = 100,
-  window_length = 120,
-  criterion     = 4,
-  preset_value  = 50
-)
-```
-
-
-
-## Novel Sahelian criteria
-
-All three methods below address a common gap in the native AquaCrop
-criteria: none of the built-in rules were designed with the specific
-rainfall dynamics of the Sahel in mind — namely, the frequency of false
-starts, the importance of post-germination dry spell risk, and the need
-for methods validated against farmer behaviour in the field.
-
-### Sivakumar (1988)
-
-Sivakumar (1988) proposed one of the earliest operationally robust
-definitions of onset for West Africa: the first day after a threshold
-date when rainfall over a given number of days meets a minimum,
-provided no prolonged dry spell follows within a defined subsequent
-period. Built from long-term station data across the Sudanian and
-Sahelian zones, this definition directly captures the agronomic concern
-that a good start is one that holds.
-
-
-### Marteau et al. (2009)
-
-Marteau et al. (2009) refined the Sivakumar definition using field
-observations of actual sowing decisions by pearl millet farmers in
-southwest Niger. Their formulation adjusts rainfall and dry spell
-thresholds based on agronomic field evidence rather than meteorological
-convention alone, anchoring the onset definition in observed farmer
-behaviour. It is particularly well suited for operational use in the
-Sahelian belt.
-
-
-
-### Criterion 5 — Fuzzy logic (Waongo et al., 2014)
-
-Criteria 1 through 4, as well as the Sivakumar and Marteau approaches,
-share a structural limitation: they are **binary**. A cumulative
-rainfall of 24.9 mm does not trigger a criterion set at 25 mm, even
-though agronomically the two situations are nearly identical. This
-artificial cliff effect tends to exaggerate interannual variability in
-simulated planting dates and is particularly problematic in
-probabilistic forecasting contexts.
-
-Criterion 5 addresses this by replacing hard thresholds with **three
-fuzzy membership functions**, each mapping a physical indicator to a
-planting suitability score in $[0, 1]$:
-
-| Component | Symbol | What it measures | Direction |
-|---|---|---|---|
-| Cumulative rainfall over `accum_days` days | $\gamma_1$ | Soil moisture recharge | Increasing ↑ |
-| Number of wet days over `accum_days` days | $\gamma_2$ | Temporal distribution of rain | Increasing ↑ |
-| Longest dry spell in the 30 days after onset | $\gamma_3$ | Post-germination risk | **Decreasing ↓** |
-
-Each function is trapezoidal, defined by a lower and upper bound.
-Onset is declared on the first day $j$ for which:
-
-$$\gamma_1(j) \times \gamma_2(j) \times \gamma_3(j) \geq \text{threshold}$$
-
-Because the index is a product, all three components must contribute
-simultaneously. Abundant rain concentrated in a single event
-($\gamma_2$ low), or rain immediately followed by a long dry spell
-($\gamma_3$ low), will not trigger onset even if the cumulative total
-is high. This makes criterion 5 the only method in `aquacropr`
-that explicitly and continuously penalises post-planting dry spell
-risk.
-
-```{r crit5}
-write_cal(
-  site_name       = "Ouaga",
-  onset           = "rainfall",
-  window_start    = 100,
-  window_length   = 120,
-  criterion       = 5,
-  preset_value    = 20,    # cum_rain_lower (mm)
-  successive_days = 3,     # accum_days
-  cum_rain_upper  = 40,
-  wet_days_lower  = 1,
-  wet_days_upper  = 3,
-  dry_spell_lower = 7,
-  dry_spell_upper = 15,
-  fuzzy_threshold = 0.5
-)
-```
-
-All eight parameters are written into the `.CAL` file and recovered
-automatically when `find_onset()` or `write_prm()` is called.
-
-
-
-## Thermal criteria
-
-Native to AquaCrop, thermal criteria use the `.Tnx` file and are
-designed for temperature-limited growing seasons. They are not relevant
-for the Sahel but are fully available when `aquacropr` is used in
-temperate or highland contexts.
-
-| Criterion | Trigger condition |
-|-----------|-------------------|
-| 1 | Daily Tmin ≥ preset for N successive days |
-| 2 | Daily Tmean ≥ preset for N successive days |
-| 3 | Cumulative GDD ≥ preset over N successive days |
-| 4 | Cumulative GDD since window start ≥ preset |
-
-
-
-## Fixed onset
-
-When the sowing date is prescribed — irrigated schemes, experimental
-designs, or climatological baselines — `onset = "fixed"` is the right
-choice.
-
-```{r fixed}
-write_cal(
-  site_name = "Bama_irrigated",
-  onset     = "fixed",
-  fixed_day = 166   # June 15
-)
-```
-
-> `find_onset()` reads `CLIMATE/<site_name>.PLU` from the working
-> directory. For multi-method comparisons on the same station, copy or
-> symlink the same `.PLU` under each `site_name`.
-
-
-
-## Sahelian realities
-
-### False starts
-
-The Sahelian rainy season is characterised by high intra- and
-inter-annual variability. False starts — isolated rainfall events
-followed by dry spells of 10 days or more — are frequent in May and
-early June, particularly north of the 12th parallel (Sultan et al.,
-2005). Criteria 1 and 3 do not penalise post-onset dry spells and are
-the most exposed to this risk. Criterion 2 with `occurrences = 2`, or
-any of the three Sahelian-specific methods, provide progressively
-stronger protection.
-
-### Indicative parameter ranges for criterion 5
-
-Starting points derived from Waongo et al. (2014) and operational
-practice at ANAM-BF. Local calibration against observed planting dates
-is always recommended before operational use.
-
-| Parameter | Sudan-Sahel (700–900 mm/yr) | Sahel (400–700 mm/yr) |
+| Method | Main information used | AquaCrop standalone |
 |---|---|---|
-| `preset_value` (cum_rain_lower) | 15–20 mm | 10–15 mm |
-| `cum_rain_upper` | 30–40 mm | 25–35 mm |
-| `accum_days` | 3 days | 3 days |
-| `wet_days_lower` | 1 | 1 |
-| `wet_days_upper` | 3 | 2–3 |
-| `dry_spell_lower` | 7–10 days | 5–7 days |
-| `dry_spell_upper` | 15–20 days | 10–15 days |
-| `fuzzy_threshold` | 0.4–0.6 | 0.3–0.5 |
-| `window_start` | DOY 100 (Apr 10) | DOY 120 (Apr 30) |
-| `window_length` | 120 days | 100 days |
+| Native criteria 1--4 | Rainfall or temperature | Yes |
+| Sivakumar (1988) | Rainfall + subsequent dry spell | No |
+| Marteau et al. (2009) | Planting rainfall + subsequent dry spell | No |
+| Fuzzy criterion | Rainfall + wet days + dry-spell risk | No |
 
-### Fallback behaviour
+The distinction between **native** and **additional** criteria is
+important, but the framework is not restricted to the methods in this
+table.
 
-When no day in the search window satisfies the onset criterion,
-`find_onset()` returns the last day of the window
-(`window_start + window_length - 1`). This sentinel value ensures that
-simulations always receive a valid planting date. Years where the
-fallback is triggered should be flagged in your analyses as "no onset
-detected" and not interpreted as genuine late onsets.
+A new onset definition can combine any information available to the
+onset engine. For example, a criterion could incorporate several
+rainfall thresholds, antecedent conditions, dry-spell characteristics,
+temperature, evapotranspiration, or other climate-derived indicators.
 
+The current Sahelian methods should therefore be viewed both as useful
+criteria in their own right and as examples of what becomes possible
+once onset detection is handled in R.
 
+## Why additional criteria matter
 
-## References
+An onset criterion is an operational definition of a planting
+opportunity.
 
-Marteau, R., Sultan, B., Moron, V., Guilderson, T., Kane, C., &
-Traoré, S. B. (2009). The onset of the rainy season and farmers'
-sowing strategy for pearl millet cultivation in Southwest Niger.
-*Agricultural and Forest Meteorology*, 148(10), 1738–1750.
+Different definitions answer different questions.
 
-Sivakumar, M. V. K. (1988). Predicting rainy season potential from the
-onset of rains in Southern Sahelian and Sudanian climatic zones of
-West Africa. *Agricultural and Forest Meteorology*, 42(4), 295–305.
+A cumulative rainfall criterion asks whether enough rain has fallen.
 
-Sultan, B., Baron, C., Dingkuhn, M., Sarr, B., & Janicot, S. (2005).
-Agricultural impacts of large-scale variability of the West African
-monsoon. *Agricultural and Forest Meteorology*, 128(1–2), 93–110.
+A multi-day criterion asks whether enough rain has fallen within a short
+period.
 
-Waongo, M., Laux, P., Traoré, S. B., Sanon, M., & Kunstmann, H.
-(2014). A crop model and fuzzy rule based approach for optimizing maize
-planting dates in Burkina Faso, West Africa. *Journal of Applied
-Meteorology and Climatology*, 53(3), 598–613.
+A rainfall-to-ETo criterion also considers atmospheric demand.
+
+A false-start criterion asks an additional question: whether favourable
+conditions persist after the candidate planting date.
+
+A fuzzy criterion can go further by allowing several indicators to
+contribute gradually rather than making the decision depend on a single
+hard threshold.
+
+These differences matter in the Sahel because early-season rainfall is
+highly variable. A substantial rainfall event can trigger germination
+and still be followed by conditions unable to sustain crop
+establishment.
+
+The additional methods in `aquacropr` demonstrate how the same AquaCrop
+simulation can be driven by onset definitions adapted to this type of
+agroclimatic problem.
+
+## Extending the onset framework
+
+The three additional methods are not intended to define the limit of the
+onset engine.
+
+They demonstrate three forms of extension:
+
+- **Sivakumar** adds a condition after the initial rainfall trigger;
+- **Marteau** represents an onset definition informed by observed
+  planting behaviour;
+- **the fuzzy criterion** combines several indicators through continuous
+  membership functions rather than hard thresholds.
+
+Other definitions can follow the same principle.
+
+For example, future criteria could use soil-water conditions, different
+dry-spell definitions, crop-specific establishment requirements, or
+locally calibrated combinations of climate indicators.
+
+The important point is that these extensions affect the calculation of
+the planting date, not the AquaCrop simulation interface.
+
+As long as the onset engine produces a valid planting date for each
+simulation year, `write_prm()` can pass that result to AquaCrop in the
+same way.
+
+This makes onset detection a modular part of the `aquacropr` workflow
+rather than a closed list of planting rules.

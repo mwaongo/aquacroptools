@@ -257,7 +257,7 @@
 #' @param scenario Character. Climate scenario identifier.
 #'   Default: \code{"hist"}.
 #' @param eol Character. End-of-line style: \code{"windows"}, \code{"linux"},
-#'   or \code{"macos"}. Default: \code{"windows"}.
+#'   or \code{"macos"}. If \code{NULL} (default), eol is auto-detected.
 #' @param use_standalone Logical. Whether paths are formatted for AquaCrop
 #'   standalone mode. Default: \code{TRUE}.
 #' @param base_path Character. Base absolute path. Default: \code{getwd()}.
@@ -283,7 +283,7 @@ write_prm <- function(
     obs_path             = NULL,
     simulation_start_doy = NULL,
     scenario             = "hist",
-    eol                  = "windows",
+    eol                  = NULL,
     use_standalone       = TRUE,
     base_path            = getwd()
 ) {

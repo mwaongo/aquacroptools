@@ -168,7 +168,7 @@ if (any(rew < 0)) {
   texture <- tolower(trimws(texture))
 
   # Load SoilWater data
-  utils::data("SoilWater", envir = environment())
+  SoilWater <- .pkg_data("SoilWater")
 
   # Validate textures
   invalid_textures <- setdiff(texture, SoilWater$description)
@@ -201,20 +201,20 @@ if (any(rew < 0)) {
     tibble::tibble(description = texture),
     by = "description",
     multiple = "all"
-  ) %>%
-    dplyr::relocate(description, .after = dplyr::everything()) %>%
+  ) |>
+    dplyr::relocate("description", .after = dplyr::everything()) |>
     dplyr::mutate(
-      thickness = thickness, .before = sat,
-      thickness = sprintf("%8.2f", thickness),
-      sat = sprintf("%7.1f", sat),
-      fc = sprintf("%5.1f", fc),
-      wp = sprintf("%5.1f", wp),
-      ksat = sprintf("%7.1f", ksat),
-      penetrability = sprintf("%10.0f", penetrability),
-      gravel = sprintf("%9.0f", gravel),
-      cra = sprintf("%13.6f", cra),
-      crb = sprintf("%13.6f", crb),
-      description = sprintf("%25s", description)
+      thickness = thickness, .before = "sat",
+      thickness = sprintf("%8.2f", .data$thickness),
+      sat = sprintf("%7.1f", .data$sat),
+      fc = sprintf("%5.1f", .data$fc),
+      wp = sprintf("%5.1f", .data$wp),
+      ksat = sprintf("%7.1f", .data$ksat),
+      penetrability = sprintf("%10.0f", .data$penetrability),
+      gravel = sprintf("%9.0f", .data$gravel),
+      cra = sprintf("%13.6f", .data$cra),
+      crb = sprintf("%13.6f", .data$crb),
+      description = sprintf("%25s", .data$description)
     )
 
   # Get line ending

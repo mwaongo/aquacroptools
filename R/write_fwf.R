@@ -149,19 +149,45 @@ write_fwf <- function(x, file, width,
                       justify = "l",
                       replace_na = "NA",
                       eol = NULL, append = TRUE) {
-  # Convert factor columns to character
-  fct_col <- which(sapply(x, is.factor))
-  if (length(fct_col) > 0) {
-    for (i in fct_col) {
-      x[, i] <- as.character(x[, i])
-    }
-  }
+  tbl_content <- .fwf_format(x, width = width, justify = justify,
+                             replace_na = replace_na)
 
-  # Replace NA values
-  x[is.na(x)] <- replace_na
+  sep <- .get_eol(eol = eol)
 
-  # Get number of columns
-  n_col <- ncol(x)
+  # Write to file. readr::write_lines() carries enough per-call overhead to
+  # dominate batch runs, so use a single base connection instead.
+  con <- base::file(file, open = if (isTRUE(append)) "ab" else "wb")
+  on.exit(close(con), add = TRUE)
+  writeLines(enc2utf8(tbl_content), con, sep = sep, useBytes = TRUE)
+
+  invisible(NULL)
+}
+
+
+#' Format a Data Frame as Fixed-Width Lines
+#'
+#' @description
+#' Formatting half of [write_fwf()], split out so that callers which already
+#' hold an open connection (see `.write_climate_file()`) can write a header and
+#' the data rows without reopening the file.
+#'
+#' @inheritParams write_fwf
+#' @return A character vector, one element per row of `x`, with no line endings.
+#' @keywords internal
+#' @noRd
+.fwf_format <- function(x, width, justify = "l", replace_na = "NA") {
+  # Work on a plain list of columns: tibbles reject the character NA
+  # replacement below, and sprintf() only ever sees the columns anyway.
+  cols <- as.list(x)
+  n_col <- length(cols)
+
+  # Convert factors to character and replace NA values, column by column so
+  # that the result is independent of x's data frame class.
+  cols <- lapply(cols, function(col) {
+    if (is.factor(col)) col <- as.character(col)
+    if (anyNA(col)) col <- replace(as.character(col), is.na(col), replace_na)
+    col
+  })
 
   # Process justify parameter
   justify <- unlist(strsplit(justify, ""))
@@ -179,15 +205,19 @@ write_fwf <- function(x, file, width,
     collapse = ""
   )
 
-  # Get end-of-line separator
+  tbl_content <- do.call(sprintf, c(list(fmt = sptf_fmt), cols))
 
-  if (is.null(eol)) eol <- get_os()
+  # A value wider than its column silently runs into the next one, producing a
+  # file with no separator between the two fields. Flag it rather than emit it.
+  too_wide <- which(nchar(tbl_content) > sum(width))
+  if (length(too_wide) > 0) {
+    warning(
+      "Value(s) too wide for the requested column width(s) in ",
+      length(too_wide), " row(s) (first: row ", too_wide[1], ").\n",
+      "Adjacent columns will run together. Round the data or increase `width`.",
+      call. = FALSE
+    )
+  }
 
-  eol <- match.arg(tolower(eol), choices = c("windows", "linux", "macos"))
-
-  sep <- .get_eol(eol = eol)
-
-  # Format data and write to file
-  tbl_content <- do.call(sprintf, c(fmt = sptf_fmt, x))
-  readr::write_lines(tbl_content, file, append = append, sep = sep)
+  tbl_content
 }

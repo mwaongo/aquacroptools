@@ -170,10 +170,10 @@ read_season_out <- function(file, intermediate = FALSE) {
 
 #  Minimal tidying: WC(1.20) -> WC_120 | Tr/Trx -> Tr_Trx
 .tidy_names <- function(x) {
-  x %>%
-    gsub(pattern = "[(/]", replacement = "_") %>%
-    gsub(pattern = "[). ]", replacement = "") %>%
-    gsub(pattern = "_{2,}", replacement = "_") %>%
+  x |>
+    gsub(pattern = "[(/]", replacement = "_") |>
+    gsub(pattern = "[). ]", replacement = "") |>
+    gsub(pattern = "_{2,}", replacement = "_") |>
     gsub(pattern = "_$", replacement = "")
 }
 
@@ -269,7 +269,7 @@ read_season_out <- function(file, intermediate = FALSE) {
 #'
 #' # Filter one year after reading
 #' library(dplyr)
-#' df %>% filter(Year == 1976)
+#' df |> filter(Year == 1976)
 #' }
 #'
 #' @export
@@ -302,7 +302,7 @@ read_day_out <- function(
 
   header <- .find_day_header(head_lines[seq_len(data_start - 1L)])
   raw_tokens <- strsplit(trimws(header), "\\s+")[[1L]]
-  tidy_names <- .merge_numeric_suffixes(raw_tokens) %>% .tidy_names()
+  tidy_names <- .merge_numeric_suffixes(raw_tokens) |> .tidy_names()
   final_names <- .dedup_names(tidy_names)
 
   # 4. Guard: token count vs data column count

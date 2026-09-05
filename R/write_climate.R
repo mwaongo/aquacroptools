@@ -32,6 +32,9 @@
 #'   "rcp26", "rcp45", "rcp60", "rcp85", "ssp119", "ssp126", "ssp245", "ssp370", "ssp585".
 #'   Default = "hist". See \code{\link{write_cli}} for details on scenarios.
 #' @param eol End-of-line character style for the output file. Options: "windows", "linux", "macos". If `NULL` (default), eol is auto-detected.
+#' @param quiet Logical. If `TRUE`, suppress the progress messages. Each call
+#'   otherwise reports six lines, which is noisy when writing files for many
+#'   stations at once. Default = `FALSE`.
 #' @param syear Start year of the data period (extracted from \code{data} if not provided).
 #'   Default = NULL.
 #'   See \code{\link{write_plu}}, \code{\link{write_eto}}, and \code{\link{write_tnx}} for details.
@@ -141,7 +144,8 @@ write_climate <- function(
     scenario = "hist",
     eol = NULL,
     syear = NULL,
-    eyear = NULL) {
+    eyear = NULL,
+    quiet = FALSE) {
   # Validate data
   if (is.null(data) || !is.data.frame(data)) {
     stop(
@@ -152,30 +156,32 @@ write_climate <- function(
     )
   }
 
+  # Progress reporting, silenced by `quiet`
+  inform <- function(...) if (!isTRUE(quiet)) message(...)
+
   # Extract station from data if available and site_name not provided
   if (is.null(site_name) && "station" %in% names(data)) {
-    site_name <- utils::head(data, 1) %>%
+    site_name <- utils::head(data, 1) |>
       dplyr::pull("station")
-    message("Using station name from data: '", site_name, "'")
+    inform("Using station name from data: '", site_name, "'")
   }
 
   # Set default station if still NULL
   if (is.null(site_name)) {
     site_name <- "station"
-    message("Using default station name: '", site_name, "'")
+    inform("Using default station name: '", site_name, "'")
   }
 
   # Ensure trailing slash on path
   path <- .add_trailing_slash(path)
 
   # Create directory if it doesn't exist
+  if (!dir.exists(path)) fs::dir_create(path, recurse = TRUE)
 
-  fs::dir_create(path, recurse = TRUE)
-
-  message("Writing climate files to: ", path)
+  inform("Writing climate files to: ", path)
 
   # Write rainfall file
-  message("  [1/4] Writing rainfall file (.PLU)...")
+  inform("  [1/4] Writing rainfall file (.PLU)...")
   plu_file <- write_plu(
     data = data,
     path = path,
@@ -187,7 +193,7 @@ write_climate <- function(
   )
 
   # Write ETo file
-  message("  [2/4] Writing ETo file (.ETo)...")
+  inform("  [2/4] Writing ETo file (.ETo)...")
   eto_file <- write_eto(
     data = data,
     path = path,
@@ -199,7 +205,7 @@ write_climate <- function(
   )
 
   # Write temperature file
-  message("  [3/4] Writing temperature file (.Tnx)...")
+  inform("  [3/4] Writing temperature file (.Tnx)...")
   tnx_file <- write_tnx(
     data = data,
     path = path,
@@ -212,7 +218,7 @@ write_climate <- function(
   )
 
   # Write CLI file
-  message("  [4/4] Writing climate file (.CLI) with scenario: ", scenario, "...")
+  inform("  [4/4] Writing climate file (.CLI) with scenario: ", scenario, "...")
   cli_file <- write_cli(
     path = path,
     site_name = site_name,
@@ -221,7 +227,7 @@ write_climate <- function(
     check_files = TRUE
   )
 
-  message("Successfully created all climate files for station '", site_name, "'")
+  inform("Successfully created all climate files for station '", site_name, "'")
 
   # Return paths to all created files
   result <- list(

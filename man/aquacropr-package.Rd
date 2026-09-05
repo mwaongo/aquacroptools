@@ -16,4 +16,13 @@ Useful links:
 }
 
 }
+\author{
+\strong{Maintainer}: Ousmane Ouedraogo \email{oousmane@proton.me}
+
+Authors:
+\itemize{
+  \item Moussa Waongo
+}
+
+}
 \keyword{internal}

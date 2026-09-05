@@ -207,7 +207,7 @@ params_df2list <- function(
       # === Changement 6 : Vérifier existence de ManData d'abord ===
       tryCatch(
         {
-          utils::data("ManData", envir = environment())
+          ManData <- .pkg_data("ManData")
 
           for (var_name in names(param_list)) {
             if (!is.na(param_list[[var_name]])) {

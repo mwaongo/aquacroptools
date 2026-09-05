@@ -163,7 +163,7 @@ write_prm_batch(
 
 Other batch operations: 
 \code{\link{write_gwt_batch}()},
-\code{\link{write_irrig_batch}()},
+\code{\link{write_irr_batch}()},
 \code{\link{write_man_batch}()},
 \code{\link{write_obs_batch}()},
 \code{\link{write_off_batch}()},

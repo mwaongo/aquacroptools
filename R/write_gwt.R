@@ -24,7 +24,7 @@
 #'     \item{depth}{Numeric. Depth below soil surface in meters.}
 #'     \item{ecw}{Numeric. Electrical conductivity in dS/m.}
 #'   }
-#' @param path Output directory path for GWT files. Default: "MANAGEMENT/".
+#' @param path Output directory path for GWT files. Default: "SOIL/".
 #' @param start_day Integer. First day of observations (code 2 only).
 #'   Default: 1.
 #' @param start_month Integer. First month of observations (code 2 only).
@@ -69,18 +69,17 @@
 #' @family AquaCrop file writers
 #' @export
 write_gwt <- function(
-    site_name,
-    code,
-    gwt_data    = NULL,
-    path        = "MANAGEMENT/",
-    start_day   = 1,
-    start_month = 1,
-    start_year  = 1901,
-    description = NULL,
-    version     = 7.1,
-    eol         = NULL
+  site_name,
+  code,
+  gwt_data = NULL,
+  path = "SOIL/",
+  start_day = 1,
+  start_month = 1,
+  start_year = 1901,
+  description = NULL,
+  version = 7.1,
+  eol = NULL
 ) {
-
   # ---- Input validation ----
   if (!code %in% 0:2) {
     stop("code must be 0, 1, or 2.", call. = FALSE)
@@ -102,51 +101,64 @@ write_gwt <- function(
   }
 
   if (code == 1 && nrow(gwt_data) != 1) {
-    stop("gwt_data must have exactly one row for code 1 (constant).", call. = FALSE)
+    stop(
+      "gwt_data must have exactly one row for code 1 (constant).",
+      call. = FALSE
+    )
   }
 
   sep <- .get_eol(eol)
 
   # Auto-generate description if not provided
   if (is.null(description)) {
-    description <- switch(as.character(code),
-                          "0" = "no shallow groundwater table",
-                          "1" = paste0(
-                            "constant groundwater table at ", gwt_data$depth[1],
-                            " m and with salinity level of ", gwt_data$ecw[1], " dS/m"
-                          ),
-                          "2" = paste0("variable groundwater table, first year is ", start_year)
+    description <- switch(
+      as.character(code),
+      "0" = "no shallow groundwater table",
+      "1" = paste0(
+        "constant groundwater table at ",
+        gwt_data$depth[1],
+        " m and with salinity level of ",
+        gwt_data$ecw[1],
+        " dS/m"
+      ),
+      "2" = paste0("variable groundwater table, first year is ", start_year)
     )
   }
 
   # ---- Build header ----
   content <- .get_gwt_header(
-    code        = code,
+    code = code,
     description = description,
-    version     = version,
-    start_day   = start_day,
+    version = version,
+    start_day = start_day,
     start_month = start_month,
-    start_year  = start_year,
-    eol         = eol
+    start_year = start_year,
+    eol = eol
   )
 
   # ---- Append data rows ----
   if (code == 1) {
     content <- paste0(
       content,
-      sprintf("%7d%10.2f%13.1f", gwt_data$day[1], gwt_data$depth[1], gwt_data$ecw[1]),
+      sprintf(
+        "%7d%10.2f%13.1f",
+        gwt_data$day[1],
+        gwt_data$depth[1],
+        gwt_data$ecw[1]
+      ),
       sep
     )
   }
 
   if (code == 2) {
     data_rows <- paste(
-      mapply(function(day, depth, ecw) {
-        paste0(sprintf("%7d%10.2f%13.1f", day, depth, ecw), sep)
-      },
-      gwt_data$day,
-      gwt_data$depth,
-      gwt_data$ecw
+      mapply(
+        function(day, depth, ecw) {
+          paste0(sprintf("%7d%10.2f%13.1f", day, depth, ecw), sep)
+        },
+        gwt_data$day,
+        gwt_data$depth,
+        gwt_data$ecw
       ),
       collapse = ""
     )

@@ -92,8 +92,11 @@
   # Ensure trailing slash on path
   path <- .add_trailing_slash(path)
 
-  # Create directory if it doesn't exist
-  fs::dir_create(path, recurse = TRUE)
+  # Create directory if it doesn't exist. Checked with base::dir.exists()
+  # rather than the fs equivalents: both fs::dir_create() and fs::dir_exists()
+  # re-derive the platform on every call, which dominates batch runs that write
+  # files for hundreds of stations.
+  if (!dir.exists(path)) fs::dir_create(path, recurse = TRUE)
 
   # Use station name as-is for filename
 
@@ -110,15 +113,21 @@
   )
 
   # Prepare data for output (select only the variable columns)
-  out_data <- data %>%
-    dplyr::select(dplyr::all_of(var_cols))
+  out_data <- data[var_cols]
 
-  # Write file
+  # Format the data rows before opening the file, so a formatting failure
+  # leaves no half-written file behind.
+  body <- .fwf_format(out_data, width = col_widths, justify = "r")
+  sep <- .get_eol(eol = eol)
+
+  # Write header and data through a single connection. The header already
+  # carries its own line endings, so it is written verbatim.
   output_file <- paste0(path, site_name, file_ext)
 
-  readr::write_file(x = header, file = output_file)
-
-  write_fwf(out_data, file = output_file, width = col_widths, justify = "r")
+  con <- base::file(output_file, open = "wb")
+  on.exit(close(con), add = TRUE)
+  writeLines(enc2utf8(as.character(header)), con, sep = "", useBytes = TRUE)
+  writeLines(enc2utf8(body), con, sep = sep, useBytes = TRUE)
 
   # Return invisibly with file path
   invisible(output_file)

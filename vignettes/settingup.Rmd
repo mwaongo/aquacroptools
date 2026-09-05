@@ -1,3 +1,4 @@
+````markdown
 ---
 title: "Getting Started: Initializing an AquaCrop Project"
 output: rmarkdown::html_vignette
@@ -5,8 +6,8 @@ vignette: >
   %\VignetteEncoding{UTF-8}
   %\VignetteIndexEntry{Getting Started: Initializing an AquaCrop Project}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  markdown: 
+editor_options:
+  markdown:
     wrap: 72
 ---
 
@@ -18,177 +19,498 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Quick Start
+## Overview
 
-The setup workflow is three steps: load, initialize, reload.
+`aquacropr` can initialize a complete AquaCrop project in one call.
 
-**1. Load the package**
+`init_aquacrop()` creates the expected project structure, installs the
+AquaCrop executable, and prepares the workspace for the rest of the
+package workflow.
+
+It also manages the AquaCrop version used by the project. You can install
+the latest official release, pin a specific release for reproducibility,
+or build the current development version from source.
+
+Downloaded binaries are cached locally and can be reused across
+projects.
+
+A minimal setup is:
+
+```{r quick-start}
+library(aquacropr)
+
+proj_dir <- init_aquacrop(
+  path = "~/my_project",
+  use_rproject = FALSE
+)
+
+setwd(proj_dir)
+```
+
+`init_aquacrop()` returns the normalized project path invisibly. Keeping
+this value is useful because many `aquacropr` functions use paths relative
+to the project root.
+
+The project is now ready for writing AquaCrop inputs and running
+simulations with `run_aquacrop()`.
+
+## Quick start
+
+The usual workflow has three steps.
+
+### 1. Load `aquacropr`
 
 ```{r library}
 library(aquacropr)
 ```
 
-**2. Initialize the project**
-
-`init_aquacrop()` creates the full directory structure and downloads the
-AquaCrop binary in one call. By default (`version = NULL`), it always
-fetches the latest officially released binary for your platform — no
-compiler required:
+### 2. Initialize the project
 
 ```{r init}
-init_aquacrop(path = "~/my_project")
+proj_dir <- init_aquacrop(
+  path = "~/my_project",
+  use_rproject = FALSE
+)
 ```
 
-**3. Reload after RStudio switches sessions**
+With the default `version = NULL`, `init_aquacrop()` installs the latest
+supported official AquaCrop release for the selected platform.
 
-Once initialization is complete, RStudio automatically opens a fresh
-session inside the new project directory. Simply reload the package to
-continue your work:
+When a prebuilt binary is available, no compiler is required.
 
-```{r reload}
-library(aquacropr)
+The function also creates the directories used for climate, crop, soil,
+management, calendar, project, and output files.
+
+### 3. Work from the project root
+
+Most writer and reader functions use project-relative paths by default.
+
+For example, climate files are usually written below `CLIMATE/`, while
+project master files are stored below `LIST/`.
+
+The simplest workflow is therefore:
+
+```{r setwd}
+setwd(proj_dir)
 ```
 
-You are now ready to write input files and run simulations with
-`run_aquacrop()`.
+From this point onward, package defaults can be used directly:
 
-## Choosing an AquaCrop Version
+```{r run}
+# Write AquaCrop input files.
+# ...
 
-The `version` argument gives you full control over which binary is
-installed.
+run_aquacrop()
+```
 
-### Latest release `(default)`
+If changing the working directory is not appropriate, such as in a
+script managing several projects, pass `base_path = proj_dir` to
+functions that support it.
 
-`version = NULL` always downloads the most recent stable binary
-published by FAO. This is the recommended option for most users: it
-requires no compilation and guarantees access to the latest AquaCrop
-features the moment they are officially released.
+## Choosing an AquaCrop version
+
+The `version` argument controls which AquaCrop executable is installed.
+
+This allows exploratory projects to follow the latest release while
+reproducible analyses remain tied to a specific AquaCrop version.
+
+### Latest release
+
+The default is:
 
 ```{r version-null}
-init_aquacrop(path = "~/my_project")
+init_aquacrop(
+  path = "~/my_project",
+  version = NULL
+)
 ```
+
+`version = NULL` resolves to the latest supported official AquaCrop
+release for the selected platform.
+
+This is the most convenient option for new projects.
 
 ### Pinned release
 
-Pass an explicit version string when reproducibility matters — for
-instance, to match a binary used in a published study:
+For reproducible work, specify the version explicitly:
 
 ```{r version-pin}
-init_aquacrop(path = "~/my_project", version = "7.1")
+init_aquacrop(
+  path = "~/my_project",
+  version = "7.1"
+)
 ```
 
-Note : When `init_aquacrop()` downloads a binary, it saves it to a local cache directory on your machine. The next time you call `init_aquacrop()` with the same version, the binary is loaded directly from cache — no internet connection needed, no waiting. The cache is keyed by version string, so `"7.1"` and `"7.2"` are stored independently. Switching versions is instant if you have already downloaded them before. The only way to bypass the cache and force a fresh download is to pass `force = TRUE`.
+Pinning the version makes the AquaCrop executable part of the recorded
+computational environment.
+
+This is useful for published studies, validation exercises, operational
+workflows, and any analysis that must be reproduced later.
 
 ### Development version
 
-`version = "dev"` compiles AquaCrop directly from the latest `main`
-branch source code. Use this when you need features that have not yet
-made it into an official release. A Fortran compiler is required (see
-[Installing from Source](#installing-aquacrop-from-source) below):
+Use `version = "dev"` to build AquaCrop from the current development
+source:
 
 ```{r version-dev}
-init_aquacrop(path = "~/my_project", version = "dev")
+init_aquacrop(
+  path = "~/my_project",
+  version = "dev"
+)
 ```
 
+This is intended for testing features that are not yet available in an
+official release.
 
-## Additional Options
+Unlike binary installation, the development version requires a working
+Fortran toolchain.
 
-### Overwriting an existing project
+Internally, `init_aquacrop()` delegates installation to
+`install_binaries()`, which uses `install_source()` when
+`version = "dev"`.
 
-By default, `init_aquacrop()` will not touch an existing installation.
-Use `force` to reinstall the binary and `overwrite` to reset the
-directory structure:
+`init_aquacrop()` only exposes the arguments needed for normal project
+initialization. More specialized build options can be passed directly to
+`install_binaries()` or `install_source()`.
 
-```{r force}
-init_aquacrop(path = "~/my_project", force = TRUE, overwrite = TRUE)
+For example:
+
+```{r version-dev-direct}
+install_binaries(
+  version = "dev",
+  path = "~/my_project",
+  compiler = "gfortran",
+  keep_source = TRUE
+)
 ```
 
-### Skipping the RStudio project file
+See [Installing AquaCrop from source](#installing-aquacrop-from-source)
+for the required build tools.
 
-An `.Rproj` file is created at the project root by default. Set
-`use_rproject = FALSE` to opt out:
+## Binary caching
+
+Official AquaCrop binaries are stored in the package cache:
+
+```r
+rappdirs::user_cache_dir("aquacropr")
+```
+
+If the same version is requested again, `aquacropr` reuses the cached
+archive instead of downloading it again.
+
+```{r cache}
+init_aquacrop(
+  path = "~/project_a",
+  version = "7.1"
+)
+
+init_aquacrop(
+  path = "~/project_b",
+  version = "7.1"
+)
+```
+
+The first call downloads the binary when needed. The second project can
+reuse the local copy.
+
+Versions are cached independently, so several AquaCrop releases can
+coexist on the same machine.
+
+Use `force = TRUE` to bypass the cached installation and request a fresh
+one:
+
+```{r force-download}
+init_aquacrop(
+  path = "~/my_project",
+  version = "7.1",
+  force = TRUE
+)
+```
+
+This is useful when repairing an installation or refreshing the
+executable.
+
+## Reinitializing a project
+
+If `path` already contains a complete AquaCrop project,
+`init_aquacrop()` leaves the existing input files unchanged.
+
+It checks the project structure and installs the executable only when it
+is missing.
+
+Two arguments allow this behavior to be overridden.
+
+`force = TRUE` reinstalls the AquaCrop executable.
+
+`overwrite = TRUE` reruns project initialization. Missing directories are
+recreated, bundled simulation templates are restored to `SIMUL/`, and
+`README.txt` is rewritten.
+
+Existing user input files such as `.PLU`, `.CRO`, `.SOL`, and `.PRM`
+files are not deleted.
+
+```{r overwrite}
+init_aquacrop(
+  path = "~/my_project",
+  force = TRUE,
+  overwrite = TRUE
+)
+```
+
+This is useful after an incomplete initialization or when the project
+needs to be prepared again for another platform.
+
+## RStudio project behavior
+
+By default, `use_rproject = TRUE`.
+
+When `init_aquacrop()` is called from an active interactive RStudio
+session, it can create and open an `.Rproj` file through
+`rstudioapi::openProject()`.
+
+Opening the project changes the active RStudio session. This is useful
+for interactive work, but less suitable inside scripts that are expected
+to continue running after initialization.
+
+For scripted workflows, use:
 
 ```{r rproject}
-init_aquacrop(path = "~/my_project", use_rproject = FALSE)
+proj_dir <- init_aquacrop(
+  path = "~/my_project",
+  use_rproject = FALSE
+)
+
+setwd(proj_dir)
 ```
 
-### Cross-platform projects
+This is the recommended pattern for batch scripts, CI pipelines,
+containers, servers, and other non-interactive workflows.
 
-The operating system is auto-detected at runtime. You can override this
-with the `os` argument — useful when preparing a project on one machine
-that will run on another:
+Outside an active RStudio session, the RStudio-specific branch is
+skipped. No `.Rproj` file is created.
+
+The AquaCrop project itself does not depend on RStudio.
+
+## Selecting the target platform
+
+The operating system is detected automatically.
+
+```{r os-auto}
+init_aquacrop(path = "~/my_project")
+```
+
+In most cases, no `os` argument is needed.
+
+The target platform can also be selected explicitly from `"windows"`,
+`"linux"`, or `"macos"`.
 
 ```{r os}
-# Build a Windows-ready project from Linux or macOS
-init_aquacrop(path = "~/my_project", os = "windows")
+init_aquacrop(
+  path = "~/my_project",
+  os = "windows"
+)
 ```
 
+This is useful when preparing a project on one operating system for
+execution on another.
 
-## Installing AquaCrop from Source {#installing-aquacrop-from-source}
+For example, a project can be organized on Linux or macOS while
+installing the Windows AquaCrop executable that will later be used on a
+Windows machine.
 
-When `version = "dev"` is used, `init_aquacrop()` internally delegates
-to `install_source()`, which runs the following steps automatically:
+The project directory structure remains the same across platforms.
 
-1.  **Compiler detection** — queries `R CMD config FC` once and reuses the result throughout. Override with the `compiler` argument if needed.
-2.  **Source download** — fetches the latest `main` branch archive from the AquaCrop repository.
-3.  **Compilation** — invokes `make` with the detected Fortran compiler.
-4.  **Installation** — copies the compiled executable to `path`.
-5.  **Cleanup** — removes temporary build files unless
-    `keep_source = TRUE`.
+## Installing AquaCrop from source {#installing-aquacrop-from-source}
 
-System requirements by platform:
+When `version = "dev"` is requested, `install_binaries()` delegates the
+build to `install_source()`.
 
-| Platform | Required tools |
-|--------------------------------|----------------------------------------|
-| **Linux** | GNU Make ≥ 3.82 · gfortran ≥ 6.4.0 *or* ifort ≥ 18.0.1 |
-| **macOS** | GNU Make ≥ 3.82 · gfortran from [mac.r-project.org/tools](https://mac.r-project.org/tools) |
-| **Windows** | [Rtools](https://cran.r-project.org/bin/windows/Rtools/) |
+The source installation performs the main steps automatically:
 
-> **macOS note:** The `clang` compiler bundled with Xcode does not
-> include Fortran support. Always use the gfortran binary from the
-> official R toolchain at mac.r-project.org/tools.
+1. detect the Fortran compiler;
+2. download the AquaCrop source;
+3. compile the executable;
+4. install it in the requested directory; and
+5. remove temporary build files.
 
-## Project Directory Structure
+Compiler detection uses:
 
-A successful call to `init_aquacrop()` produces the following layout
-under `path`:
+```text
+R CMD config FC
+```
 
-```         
+This retrieves the Fortran compiler configured for the current R
+installation.
+
+A compiler can also be supplied directly when calling
+`install_binaries()` or `install_source()`.
+
+Temporary source files are removed after a successful build unless
+`keep_source = TRUE`.
+
+### Linux
+
+A working `make` installation and a compatible Fortran compiler are
+required.
+
+For example:
+
+```sh
+sudo apt-get install make gfortran
+```
+
+or:
+
+```sh
+sudo dnf install make gcc-gfortran
+```
+
+### macOS
+
+A Fortran compiler must be installed separately.
+
+The `clang` compiler provided with Xcode does not include Fortran
+support.
+
+For R-based workflows, a compatible `gfortran` installation should be
+used.
+
+### Windows
+
+A compatible Rtools installation provides the build tools required for
+source compilation, including `make` and `gfortran`.
+
+Compiler requirements can change with the development source. Users
+building `version = "dev"` should therefore ensure that their local
+toolchain is compatible with the current AquaCrop source.
+
+## Project structure
+
+A successful call to `init_aquacrop()` creates the following workspace:
+
+```text
 my_project/
-├── my_project.Rproj      # RStudio project file (if use_rproject = TRUE)
-├── aquacrop[.exe]        # AquaCrop executable
-├── README.txt            # Project notes
-├── CAL/                  # Calendar files (.CAL)
-├── CLIMATE/              # Climate input files (.Tnx, .ETo, .PLU, .CLI, .CO2)
-├── CROP/                 # Crop parameter files (.CRO)
-├── LIST/                 # Project Master files (.PRM)
-├── MANAGEMENT/           # Field management files: (.MAN, .IRR)
-├── OBS/                  # Observed field data for simulation evaluation
-├── OUTP/                 # Simulation output files
-├── PARAM/                # AquaCrop program parameter files
-├── SIMUL/                # Simulation settings
-└── SOIL/                 # Soil profile files (.SOL, .SW0, .GWT)
+├── my_project.Rproj
+├── aquacrop[.exe]
+├── README.txt
+├── CAL/
+├── CLIMATE/
+├── CROP/
+├── LIST/
+├── MANAGEMENT/
+├── OBS/
+├── OUTP/
+├── PARAM/
+├── SIMUL/
+└── SOIL/
 ```
 
-## Relationship to the Official AquaCrop Standalone
+The `.Rproj` file is only created when the RStudio integration is used.
 
-Users already familiar with the [FAO AquaCrop standalone
-(plug-in)](https://www.fao.org/aquacrop/en) will recognize the structure
-immediately. `aquacropr` preserves all four core directories of the official standalone (`LIST`, `PARAM`, `SIMUL`, `OUTP`) and extends the design by replacing the historical catch-all `DATA/` folder with clearly typed, dedicated directories — one per input category.
+The directories group AquaCrop files by role.
 
-| Directory     | AquaCrop Standalone v7.1      | `aquacropr`    |
-|---------------|-------------------------------|--------------------|
-| `LIST/`       | ✅ Project files (.PRO, .PRM) | ✅                 |
-| `SIMUL/`      | ✅ Simulation settings        | ✅                 |
-| `PARAM/`      | ✅ Program parameters         | ✅                 |
-| `OUTP/`       | ✅ Output files               | ✅                 |
-| `OBS/`        | ✅ Observed field data        | ✅                 |
-| `CLIMATE/`    | ❌ (merged in `DATA/`)        | ✅ Explicit folder |
-| `CROP/`       | ❌ (merged in `DATA/`)        | ✅ Explicit folder |
-| `SOIL/`       | ❌ (merged in `DATA/`)        | ✅ Explicit folder |
-| `MANAGEMENT/` | ❌ (merged in `DATA/`)        | ✅ Explicit folder |
-| `CAL/`        | ❌ (merged in `DATA/`)        | ✅ Explicit folder |
+`CAL/` contains growing-season calendar files.
 
-This structure makes large-scale simulation projects easier to navigate,
-script, and version-control, while remaining fully compatible with the
-input file formats expected by the AquaCrop executable.
+`CLIMATE/` contains rainfall, temperature, reference
+evapotranspiration, climate descriptor, and atmospheric carbon dioxide
+files.
+
+`CROP/` contains crop parameter files.
+
+`SOIL/` contains soil profiles, initial soil-water conditions, and
+groundwater files.
+
+`MANAGEMENT/` contains field-management and irrigation inputs.
+
+`LIST/` contains project master files.
+
+`OBS/` contains observed data used for comparison or model evaluation.
+
+`OUTP/` contains simulation outputs.
+
+`PARAM/` contains AquaCrop program parameters.
+
+`SIMUL/` contains simulation settings.
+
+The AquaCrop executable is installed at the project root.
+
+## Why `aquacropr` uses this structure
+
+The project layout follows AquaCrop conventions while making input types
+explicit.
+
+The official standalone traditionally groups many inputs in a common
+`DATA/` directory. This works well for interactive use, but becomes less
+convenient when projects contain many sites, crops, climate datasets, or
+simulation configurations.
+
+`aquacropr` separates these inputs into dedicated directories:
+
+```text
+CAL/
+CLIMATE/
+CROP/
+MANAGEMENT/
+SOIL/
+```
+
+The AquaCrop file formats themselves are unchanged.
+
+The difference is organizational.
+
+Predictable paths make files easier to generate, inspect, automate, and
+version-control from R. They also match the relative-path conventions
+used by the package.
+
+Core AquaCrop directories such as `LIST/`, `PARAM/`, `SIMUL/`, and
+`OUTP/` remain part of the project.
+
+The result is an AquaCrop-compatible workspace organized for scripted
+and reproducible workflows.
+
+## Reproducible project setup
+
+For exploratory work, the latest supported release is convenient:
+
+```{r reproducible-latest}
+proj_dir <- init_aquacrop(
+  path = "~/my_project",
+  use_rproject = FALSE
+)
+```
+
+For reproducible analyses, pin the AquaCrop version:
+
+```{r reproducible-pinned}
+proj_dir <- init_aquacrop(
+  path = "~/my_project",
+  version = "7.1",
+  use_rproject = FALSE
+)
+```
+
+This makes the executable version explicit alongside the R package,
+scripts, and input data used to construct the simulation.
+
+`aquacropr` does not replace AquaCrop. It manages the project,
+executable, files, and simulation workflow around it.
+
+Once initialized, the same workspace can be populated programmatically
+with climate, crop, soil, management, and calendar inputs and then passed
+to `run_aquacrop()`.
+
+## Next steps
+
+Project initialization normally needs to be performed only once.
+
+The usual workflow is then to:
+
+1. work from the project root or pass `base_path` explicitly;
+2. prepare the required AquaCrop input files;
+3. write the project master file;
+4. run AquaCrop; and
+5. read and analyse the simulation outputs.
+
+The rest of the `aquacropr` workflow builds on the project structure
+created by `init_aquacrop()`.
+````

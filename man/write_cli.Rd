@@ -5,21 +5,23 @@
 \title{Write AquaCrop Climate File}
 \usage{
 write_cli(
-  path = "weather/",
+  path = "CLIMATE/",
   site_name = "station",
-  eol = "windows",
+  eol = NULL,
   scenario = "hist",
   check_files = TRUE
 )
 }
 \arguments{
-\item{path}{Directory path where climate files are located and where .CLI will be written. Default = "weather/"}
+\item{path}{Directory path where climate files are located and where .CLI will be written. Default = "CLIMATE/"}
 
 \item{site_name}{Station name or identifier. The .Tnx, .ETo, and .PLU files with this
 station name must exist in the path. Default = "station"}
 
 \item{eol}{End-of-line character style for the output file.
-Options: "windows", "unix", "linux", or "macOS". Default = "windows"}
+Options: "windows", "linux", or "macos". If \code{NULL} (default), eol is
+auto-detected from the host operating system, matching the other
+AquaCrop file writers.}
 
 \item{scenario}{CO2 scenario to use. Options: "hist" (historical/Mauna Loa),
 "rcp26", "rcp45", "rcp60", "rcp85", "ssp119", "ssp126", "ssp245", "ssp370", "ssp585".

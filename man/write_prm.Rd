@@ -21,7 +21,7 @@ write_prm(
   obs_path = NULL,
   simulation_start_doy = NULL,
   scenario = "hist",
-  eol = "windows",
+  eol = NULL,
   use_standalone = TRUE,
   base_path = getwd()
 )
@@ -77,7 +77,7 @@ Default: \code{NULL} (April 1st).}
 Default: \code{"hist"}.}
 
 \item{eol}{Character. End-of-line style: \code{"windows"}, \code{"linux"},
-or \code{"macos"}. Default: \code{"windows"}.}
+or \code{"macos"}. If \code{NULL} (default), eol is auto-detected.}
 
 \item{use_standalone}{Logical. Whether paths are formatted for AquaCrop
 standalone mode. Default: \code{TRUE}.}

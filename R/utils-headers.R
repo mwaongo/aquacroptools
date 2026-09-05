@@ -333,7 +333,7 @@
     bund_ec = 0.00,
     eol = NULL) {
   # Load SWOData for texture validation
-  utils::data("SWOData", envir = environment())
+  SWOData <- .pkg_data("SWOData")
 
   # Validate textures
   texture_norm <- tolower(trimws(texture))

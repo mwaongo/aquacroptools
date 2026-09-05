@@ -184,7 +184,7 @@ write_man <- function(
   fs::dir_create(path, recurse = TRUE)
 
   # Load ManData
-  utils::data("ManData", envir = environment())
+  ManData <- .pkg_data("ManData")
   valid_names <- ManData$name
 
   # Validate parameter names
@@ -241,20 +241,20 @@ write_man <- function(
   }
 
   # Process parameters
-  value <- params %>%
-    unlist() %>%
+  value <- params |>
+    unlist() |>
     as.vector()
 
-  description <- ManData %>%
-    dplyr::filter((name %in% names(params))) %>%
+  description <- ManData |>
+    dplyr::filter((.data$name %in% names(params))) |>
     dplyr::pull(description)
 
-  fmt <- ManData %>%
-    dplyr::filter((name %in% names(params))) %>%
+  fmt <- ManData |>
+    dplyr::filter((.data$name %in% names(params))) |>
     dplyr::pull(fmt)
 
-  width <- ManData %>%
-    dplyr::filter((name %in% names(params))) %>%
+  width <- ManData |>
+    dplyr::filter((.data$name %in% names(params))) |>
     dplyr::pull(width)
 
   new_vars <- tibble::tibble(
@@ -266,17 +266,17 @@ write_man <- function(
   )
 
   # Combine with defaults and prepare output
-  man_info <- ManData %>%
-    dplyr::filter(!(name %in% names(params))) %>%
-    dplyr::bind_rows(new_vars) %>%
-    dplyr::arrange(name) %>%
+  man_info <- ManData |>
+    dplyr::filter(!(.data$name %in% names(params))) |>
+    dplyr::bind_rows(new_vars) |>
+    dplyr::arrange(.data$name) |>
     dplyr::mutate(
       value = .format_string2(
         string = value,
         fmt = fmt,
         width = width
       )
-    ) %>%
+    ) |>
     dplyr::select(value, description)
 
   # Get line ending and header
@@ -287,7 +287,7 @@ write_man <- function(
     fertilizer = fertilization_rate,
     mulch = mulching_rate,
     eol = eol
-  ) %>%
+  ) |>
     glue::glue("\n", .sep = sep)
 
   # Write file

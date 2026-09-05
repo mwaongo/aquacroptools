@@ -165,7 +165,7 @@ write_swo <- function(
     layer_thickness = 1.0,
     layers = NULL) {
   # Load soil water content default data
-  utils::data("SWOData", envir = environment())
+  SWOData <- .pkg_data("SWOData")
 
   # Ensure trailing slash on path
   path <- .add_trailing_slash(path)
@@ -279,8 +279,8 @@ write_swo <- function(
 
 
     # Select and reorder columns
-    layers <- layers %>%
-      dplyr::select(thickness, water_content, ece)
+    layers <- layers |>
+      dplyr::select("thickness", "water_content", "ece")
 
     message(
       "Created ", n_layers, " soil layer(s) with ",
@@ -418,13 +418,13 @@ write_swo <- function(
   )
 
   # Format layer data for writing
-  layer_output <- layers %>%
+  layer_output <- layers |>
     dplyr::mutate(
-      thickness_fmt = sprintf("%13.2f", thickness),
-      water_content_fmt = sprintf("%21.2f", water_content),
-      ece_fmt = sprintf("%22.2f", ece)
-    ) %>%
-    dplyr::select(thickness_fmt, water_content_fmt, ece_fmt)
+      thickness_fmt = sprintf("%13.2f", .data$thickness),
+      water_content_fmt = sprintf("%21.2f", .data$water_content),
+      ece_fmt = sprintf("%22.2f", .data$ece)
+    ) |>
+    dplyr::select("thickness_fmt", "water_content_fmt", "ece_fmt")
 
   # Write layer data
   readr::write_delim(
