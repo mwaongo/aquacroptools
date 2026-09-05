@@ -2,7 +2,6 @@
 "_PACKAGE"
 
 ## usethis namespace: start
-#' @importFrom dplyr %>%
 #' @importFrom dplyr case_when
 #' @importFrom dplyr everything
 #' @importFrom dplyr mutate

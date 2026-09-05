@@ -2,11 +2,14 @@
 
 ## Breaking changes
 
+- **`%>%` is no longer re-exported.** Package code uses the native pipe `|>`
+  throughout, so `R/utils-pipe.R` and the `magrittr` dependency are gone.
+  Code that relied on `library(aquacropr)` providing `%>%` must now load it
+  from magrittr or dplyr directly, or switch to `|>`.
 - **`Depends: R (>= 4.1.0)`**, raised from `R (>= 3.5)`. Package code now uses
   the native pipe `|>` throughout (51 call sites converted from `%>%`), which
   requires R 4.1. The shipped `regionalsim` vignette already used `|>`, so the
   previous `R (>= 3.5)` declaration was not accurate in any case.
-  `%>%` is still re-exported, so user code that relies on it keeps working.
 
 ## Climate writers
 

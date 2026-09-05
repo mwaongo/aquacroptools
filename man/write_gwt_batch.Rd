@@ -8,7 +8,7 @@ write_gwt_batch(
   site_name = NULL,
   code,
   gwt_data = NULL,
-  path = "MANAGEMENT/",
+  path = "SOIL/",
   climate_path = "CLIMATE/",
   start_day = 1,
   start_month = 1,
@@ -37,7 +37,7 @@ For code 1 and 2: either a single data.frame applied to all stations,
 or a list of data.frames (one per station). Each data.frame must have
 columns day, depth, and ecw. For code 1, exactly one row is required.}
 
-\item{path}{Output directory path for GWT files. Default: "MANAGEMENT/".}
+\item{path}{Output directory path for GWT files. Default: "SOIL/".}
 
 \item{climate_path}{Path to climate files directory, used for station
 discovery. Default: "CLIMATE/".}
