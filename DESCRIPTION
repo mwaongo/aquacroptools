@@ -1,43 +1,52 @@
 Type: Package
 Package: aquacropr
 Language: en-GB
-Title: R interface to the FAO AquaCrop crop water productivity model (v7.0+)
+Title: R Interface to the FAO AquaCrop Crop Water Productivity Model (v7.0+)
 Version: 0.3.0
 Date: 2026-09-05
 Authors@R: c(
-    person("Ousmane", "Ouedraogo", email = "oousmane@proton.me", role = c("cre", "aut")),
-    person("Moussa", "Waongo", role = "aut")
+    person("Moussa", "Waongo",
+           role  = "aut",
+           email = "waongomoussa@gmail.com",
+           comment = c(ORCID = "0009-0007-6665-5623")),
+    person("Ousmane", "Ouedraogo",
+           role  = c("cre", "aut"),
+           email = "oousmane@proton.me",
+           comment = c(ORCID = "0000-0002-6349-4146"))
     )
-Description:R interface to AquaCrop v7.0 and higher, the FAO crop water productivity model. Streamlines reading, writing, and managing AquaCrop input/output files for batch simulations, climate scenario analysis, and crop yield assessment.
+Description: R interface to AquaCrop v7.0 and higher, the FAO crop water
+    productivity model. Streamlines reading, writing, and managing AquaCrop
+    input/output files for batch simulations, climate scenario analysis,
+    and crop yield assessment.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: 
+Depends:
+    R (>= 4.1)
+Imports:
+    cli,
     dplyr,
     fs,
     glue,
-    rlang,
-    lubridate,
     janitor,
+    lubridate,
+    purrr,
+    rappdirs,
     readr,
+    rlang,
+    sf,
     stringr,
     tibble,
-    purrr,
-    cli,
-    rappdirs,
-    rstudioapi,
-    withr,
-    sf,
-    utils
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
-URL: https://github.com/mwaongo/aquacropr
-BugReports: https://github.com/mwaongo/aquacropr/issues
-Depends: 
-    R (>= 4.1.0)
-Suggests: 
+    utils,
+    withr
+Suggests:
     knitr,
     rmarkdown,
+    rstudioapi,
     testthat (>= 3.0.0)
-Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+URL: https://github.com/mwaongo/aquacropr, https://mwaongo.github.io/aquacropr/
+BugReports: https://github.com/mwaongo/aquacropr/issues
 VignetteBuilder: knitr
+Config/testthat/edition: 3

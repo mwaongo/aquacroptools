@@ -2,21 +2,3 @@ url: https://mwaongo.github.io/aquacropr/
 template:
   bootstrap: 5
 
-navbar:
-  components:
-    articles:
-      text: Vignettes
-      menu:
-        - text: "Setting up"
-          href: articles/settingup.html
-        - text: "Sowing date"
-          href: articles/sowingdate.html
-        - text: "Regional simulation"
-          href: articles/regionalsim.html
-
-articles:
-  - title: "Get started"
-    contents:
-      - settingup
-      - sowingdate
-      - regionalsim

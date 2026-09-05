@@ -5,17 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>R interface to the FAO AquaCrop crop water productivity model (v7.0+) • aquacropr</title>
-<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
-<link rel="icon" type="”image/svg+xml”" href="favicon.svg">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="icon" sizes="any" href="favicon.ico">
-<link rel="manifest" href="site.webmanifest">
+<title>R Interface to the FAO AquaCrop Crop Water Productivity Model (v7.0+) • aquacropr</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="R interface to the FAO AquaCrop crop water productivity model (v7.0+)">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="R Interface to the FAO AquaCrop Crop Water Productivity Model (v7.0+)">
 <meta name="description" content="R interface to AquaCrop v7.0 and higher, the FAO crop water productivity model. Streamlines reading, writing, and managing AquaCrop input/output files for batch simulations, climate scenario analysis, and crop yield assessment.">
 <meta property="og:description" content="R interface to AquaCrop v7.0 and higher, the FAO crop water productivity model. Streamlines reading, writing, and managing AquaCrop input/output files for batch simulations, climate scenario analysis, and crop yield assessment.">
 </head>
@@ -38,13 +33,14 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-vignettes" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Vignettes</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes">
-<li><a class="dropdown-item" href="articles/settingup.html">Setting up</a></li>
-    <li><a class="dropdown-item" href="articles/sowingdate.html">Sowing date</a></li>
-    <li><a class="dropdown-item" href="articles/regionalsim.html">Regional simulation</a></li>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/regionalsim.html">Regional Crop Simulations Using aquacropr</a></li>
+    <li><a class="dropdown-item" href="articles/settingup.html">Getting Started: Initializing an AquaCrop Project</a></li>
+    <li><a class="dropdown-item" href="articles/sowingdate.html">Onset of the Growing Season: Methods, Limitations, and Sahelian Realities</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -112,7 +108,7 @@
 </h3>
 <p>aquacropr ships with a built-in <code>weather</code> dataset containing daily observations for a single station. Inspect it first, then a single call to <code><a href="reference/write_climate.html">write_climate()</a></code> generates all four climate files required by AquaCrop.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">weather</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">weather</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   year month day rain  et0 tmin tmax</span></span>
 <span><span class="co">#&gt; 1 1976     1   1  0.0 3.21  9.2 24.1</span></span>
 <span><span class="co">#&gt; 2 1976     1   2  0.0 3.45 10.1 25.3</span></span>
@@ -346,7 +342,8 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Ousmane Ouedraogo <br><small class="roles"> Maintainer </small>   </li>
+<li>Moussa Waongo <br><small class="roles"> Author </small> <a href="https://orcid.org/0009-0007-6665-5623" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>Ousmane Ouedraogo <br><small class="roles"> Maintainer, author </small> <a href="https://orcid.org/0000-0002-6349-4146" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 </ul>
 </div>
 
@@ -357,7 +354,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Ousmane Ouedraogo.</p>
+  <p>Developed by Moussa Waongo, Ousmane Ouedraogo.</p>
 </div>
 
 <div class="pkgdown-footer-right">
