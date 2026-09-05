@@ -1,0 +1,31 @@
+---
+config:
+  layout: dagre
+  flowchart:
+    htmlLabels: true
+    nodeSpacing: 45
+    rankSpacing: 55
+title: aquacropr Onset Date Determination Workflow
+---
+flowchart TB
+    Weather["Weather data"] --> WriteClimate["write_climate()"]
+    WriteClimate --> Climate["Climate files<br>*.PLU · *.Tnx · *.ETo"]
+    Criteria["Onset criterion<br>and parameters"] --> WriteCAL["write_cal()<br>write_cal_batch()"]
+    WriteCAL --> CAL["`*.CAL file<br>criterion and parameters`"]
+    Climate --> Onset["find_onset()"]
+    CAL --> Onset
+    Onset --> Result["Onset dates<br> year | onset | date"]
+
+     Weather:::input
+     WriteClimate:::engine
+     Climate:::input
+     Criteria:::criterion
+     WriteCAL:::config
+     CAL:::config
+     Onset:::engine
+     Result:::output
+    classDef input stroke:#38bdf8,fill:#f0f9ff
+    classDef config stroke:#818cf8,fill:#eef2ff
+    classDef engine stroke:#6366f1,fill:#eef2ff
+    classDef criterion stroke:#a78bfa,fill:#f5f3ff
+    classDef output stroke:#4ade80,fill:#f0fdf4

@@ -14,7 +14,7 @@
 #'   For code 1 and 2: either a single data.frame applied to all stations,
 #'   or a list of data.frames (one per station). Each data.frame must have
 #'   columns day, depth, and ecw. For code 1, exactly one row is required.
-#' @param path Output directory path for GWT files. Default: "MANAGEMENT/".
+#' @param path Output directory path for GWT files. Default: "SOIL/".
 #' @param climate_path Path to climate files directory, used for station
 #'   discovery. Default: "CLIMATE/".
 #' @param start_day Integer. First day of observations (code 2 only).
@@ -77,22 +77,21 @@
 #' @importFrom fs path file_exists dir_exists dir_ls file_delete
 #' @export
 write_gwt_batch <- function(
-    site_name = NULL,
-    code,
-    gwt_data     = NULL,
-    path         = "MANAGEMENT/",
-    climate_path = "CLIMATE/",
-    start_day    = 1,
-    start_month  = 1,
-    start_year   = 1901,
-    description  = NULL,
-    version      = 7.1,
-    eol          = NULL,
-    base_path    = getwd(),
-    verbose      = TRUE,
-    clean        = FALSE
+  site_name = NULL,
+  code,
+  gwt_data = NULL,
+  path = "SOIL/",
+  climate_path = "CLIMATE/",
+  start_day = 1,
+  start_month = 1,
+  start_year = 1901,
+  description = NULL,
+  version = 7.1,
+  eol = NULL,
+  base_path = getwd(),
+  verbose = TRUE,
+  clean = FALSE
 ) {
-
   # Clean directory if requested
   if (clean) {
     .clean_directory(path, "\\.GWT$", verbose)
@@ -100,11 +99,11 @@ write_gwt_batch <- function(
 
   # Discover or validate stations from climate files
   site_name <- .discover_or_validate_items(
-    item_names   = site_name,
+    item_names = site_name,
     climate_path = climate_path,
-    base_path    = base_path,
-    item_type    = "site",
-    verbose      = verbose
+    base_path = base_path,
+    item_type = "site",
+    verbose = verbose
   )
 
   n <- length(site_name)
@@ -126,7 +125,10 @@ write_gwt_batch <- function(
         "gwt_data must be either:\n",
         "  - A single data.frame (applied to all stations), or\n",
         "  - A list of data.frames with length matching site_name\n",
-        "Expected length: ", n, ", got: ", length(gwt_data),
+        "Expected length: ",
+        n,
+        ", got: ",
+        length(gwt_data),
         call. = FALSE
       )
     }
@@ -137,33 +139,43 @@ write_gwt_batch <- function(
   }
 
   .batch_with_progress(
-    items     = site_name,
-    params    = gwt_data,
-    verbose   = verbose,
+    items = site_name,
+    params = gwt_data,
+    verbose = verbose,
     item_type = "site",
-    fn = function(item, params, code, path, start_day, start_month,
-                  start_year, description, version, eol) {
+    fn = function(
+      item,
+      params,
+      code,
+      path,
+      start_day,
+      start_month,
+      start_year,
+      description,
+      version,
+      eol
+    ) {
       write_gwt(
-        site_name    = item,
-        code        = code,
-        gwt_data    = params,
-        path        = path,
-        start_day   = start_day,
+        site_name = item,
+        code = code,
+        gwt_data = params,
+        path = path,
+        start_day = start_day,
         start_month = start_month,
-        start_year  = start_year,
+        start_year = start_year,
         description = description,
-        version     = version,
-        eol         = eol
+        version = version,
+        eol = eol
       )
     },
-    code        = code,
-    path        = path,
-    start_day   = start_day,
+    code = code,
+    path = path,
+    start_day = start_day,
     start_month = start_month,
-    start_year  = start_year,
+    start_year = start_year,
     description = description,
-    version     = version,
-    eol         = eol
+    version = version,
+    eol = eol
   )
 
   if (verbose) {
